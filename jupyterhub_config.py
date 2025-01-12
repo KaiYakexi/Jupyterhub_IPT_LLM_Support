@@ -28,7 +28,7 @@ c.DockerSpawner.image = "jupyterlab-llmextension:latest"
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 
 # Enable user registration
-c.Authenticator.allowed_users = {'ye','myadmin'}
+c.Authenticator.allowed_users = {'ye','myadmin','tester'}
 c.Authenticator.admin_users = {'myadmin'}
 c.NativeAuthenticator.open_signup = True
 

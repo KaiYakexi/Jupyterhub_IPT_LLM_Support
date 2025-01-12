@@ -1,4 +1,4 @@
-# llmextension
+# myextension
 
 [![Github Actions Status](/workflows/Build/badge.svg)](/actions/workflows/build.yml)
 
@@ -13,7 +13,7 @@ A JupyterLab extension.
 To install the extension, execute:
 
 ```bash
-pip install llmextension
+pip install myextension
 ```
 
 ## Uninstall
@@ -21,7 +21,7 @@ pip install llmextension
 To remove the extension, execute:
 
 ```bash
-pip uninstall llmextension
+pip uninstall myextension
 ```
 
 ## Contributing
@@ -36,7 +36,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Change directory to the llmextension directory
+# Change directory to the myextension directory
 # Install package in development mode
 pip install -e "."
 # Link your development version of the extension with JupyterLab
@@ -65,12 +65,12 @@ jupyter lab build --minimize=False
 ### Development uninstall
 
 ```bash
-pip uninstall llmextension
+pip uninstall myextension
 ```
 
 In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
 command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
-folder is located. Then you can remove the symlink named `llmextension` within that folder.
+folder is located. Then you can remove the symlink named `myextension` within that folder.
 
 ### Packaging the extension
 

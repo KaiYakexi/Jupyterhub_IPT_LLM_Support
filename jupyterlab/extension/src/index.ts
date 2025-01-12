@@ -193,14 +193,14 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       console.error('Cell is undefined or null.');
     }
   });
-  console.log('JupyterLab frontend extension llmextension is activated!');
+  console.log('JupyterLab frontend extension testing is activated!');
   console.log('ICommandPalette:',palette);
 }
 
 
 
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'llmextension:plugin',
+  id: 'myextension:plugin',
   description: 'A JupyterLab extension.',
   autoStart: true,
   requires: [ICommandPalette, INotebookTracker],
