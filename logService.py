@@ -7,23 +7,21 @@ import os
 import secrets
 from functools import wraps
 from pymongo import MongoClient
-from flask import Flask, Response, make_response, redirect, request, session
+from flask import Flask, Response, make_response, redirect, request, session, jsonify
 from openai import OpenAI
 from jupyterhub.services.auth import HubOAuth
+from bson import json_util
 
 def get_db():
     mongoClient= MongoClient(host='mongodb',
                          port=27017, 
-                         username='root', 
-                         password='pass',
+                         username='ranDumUs8er99991', 
+                         password='randomPassWord99919',
                         authSource="admin")
-    db = client=['loggedData']
+    db = mongoClient['loggedData']
     return db
 
-try:
-    db= get_db()
-except Exception as e:
-    print('db not found')
+
     
 prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 
@@ -91,38 +89,56 @@ def authenticated(f):
     return decorated
 @app.route(prefix+"testDB", methods=['GET'])
 def testDB():
-    db=get_db()
-    response={'Important Response':"""Pymongo installed"""}
-    return Response(
-        json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-    )
-
+    try:     
+        db=get_db()
+        _loggedData = db.loggedData_data.find()
+        loggedData = json_util.dumps(list(_loggedData))
+        response={'Data': loggedData}
+        return Response(
+            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
+        )
+    except Exception as e:
+        return Response(
+            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
+        )
+        
 @app.route(prefix+"successLog", methods=['POST'])
 @authenticated
 def successLog(user):
-    print(request.get_json())
-    response={'Important Response':"""Successful Log of Success which was logged as successful because it was successful to successfully log it as a success"""}
-    return Response(
-        json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-    )
+    try:
+        data=request.json
+        db= get_db()
+        result=db.loggedData_data.insert_one(data)
+        return jsonify({"success": True, "message": "Data uploaded successfully", "id": str(result.inserted_id)})
+    except Exception as e:
+        return jsonify({'success':False, 'message':str(e)})
+        
 @app.route(prefix, methods=['POST'])
 @authenticated
 def askLLM(user):
-    data = request.get_json()
-    execution_counter=data.get('execution_counter')
-    error_name=data.get('error_name')
-    traceback=data.get('traceback')
-    source_code=data.get('source_text')
-    if not data:
+    try:
+        data = request.json
+        execution_counter=data.get('execution_counter')
+        error_name=data.get('error_name')
+        traceback=data.get('traceback')
+        source_code=data.get('source_text')
+        print(execution_counter)
+        print(execution_counter,error_name,traceback,source_code)
+        
+        if not data:
+            return Response(
+                json.dumps({'error': 'No payload received'},status=400)
+            )
+        #LLMResponse= sendRequestToLLM(execution_counter,error_name,traceback,source_code)
+        #response={'LLMResponse':LLMResponse}
+        db= get_db()
+        db.loggedData_data.insert_one(data)
+        response={'LLMResponse':"""LLM Mock Answer"""}
         return Response(
-            json.dumps({'error': 'No payload received'},status=400)
+            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
         )
-    #LLMResponse= sendRequestToLLM(execution_counter,error_name,traceback,source_code)
-    #response={'LLMResponse':LLMResponse}
-    response={'LLMResponse':"""LLM Mock Answer"""}
-    return Response(
-        json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-    )
+    except Exception as e:
+        return jsonify({'success':False,'message':str(e)})
 
 
 @app.route(prefix + 'oauth_callback')

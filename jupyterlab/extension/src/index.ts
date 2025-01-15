@@ -55,7 +55,7 @@ class LLMResponseWidget extends Widget{
   }
   async logSuccess(execution_count:Number, outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
-    const logEndpoint = 'http://127.0.0.1:8000/services/askLLM/successLog';
+    const logEndpoint = 'https://demo.colaps.team/jupyterhub/services/askLLM/successLog';
     const requestData = {executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(logEndpoint, {
       method: 'POST',
@@ -91,7 +91,7 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, errorName:String, traceback:String,sourceCode:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://127.0.0.1:8000/services/askLLM/';
+      const HubLLMEndpoint = 'https://demo.colaps.team/jupyterhub/services/askLLM/';
       const requestData = {executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {

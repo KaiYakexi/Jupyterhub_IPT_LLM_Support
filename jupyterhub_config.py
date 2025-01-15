@@ -3,7 +3,7 @@ from nativeauthenticator import NativeAuthenticator
 import os
 
 c.JupyterHub.authenticator_class = NativeAuthenticator
-
+c.JupyterHub.base_url='/jupyterhub'
 
 c.GenericOAuthenticator.enable_auth_state = True
 c.Spawner.http_timeout = 300
@@ -28,7 +28,7 @@ c.DockerSpawner.image = "jupyterlab-llmextension:latest"
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 
 # Enable user registration
-c.Authenticator.allowed_users = {'ye','myadmin','tester'}
+c.Authenticator.allowed_users = {'ye','myadmin','tester','irene'}
 c.Authenticator.admin_users = {'myadmin'}
 c.NativeAuthenticator.open_signup = True
 

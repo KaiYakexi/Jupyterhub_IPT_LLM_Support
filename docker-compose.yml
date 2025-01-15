@@ -3,14 +3,28 @@ services:
     build: .
     image: jupyterhub-custom
     container_name: jupyterhub-container
+    depends_on:
+      - db
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
       - jupyterhub_data:/srv/jupyterhub/data
       - ./logService.py:/srv/jupyterhub/logService.py
     ports:
-      - "8000:8000"
+      - "8533:8000"
     networks:
+      - jupyterhub
+  db:
+    image: mongo:latest
+    hostname: mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=loggedData
+      - MONGO_INITDB_ROOT_USERNAME=ranDumUs8er99991
+      - MONGO_INITDB_ROOT_PASSWORD=randomPassWord99919
+    volumes:
+      - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+      - ./mongodbvolume:/data/db
+    networks: 
       - jupyterhub
 
 volumes:
