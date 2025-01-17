@@ -5,7 +5,7 @@ import {
 } from '@jupyterlab/application';
 
 import {CodeCellModel, isCodeCellModel} from '@jupyterlab/cells';
-import {ICommandPalette, MainAreaWidget, WidgetTracker} from "@jupyterlab/apputils";
+import {ICommandPalette, MainAreaWidget} from "@jupyterlab/apputils";
 import {INotebookTracker, NotebookActions, NotebookPanel, NotebookTracker} from '@jupyterlab/notebook'
 import {Widget} from '@lumino/widgets';
 import {IOutput} from '@jupyterlab/nbformat'
@@ -37,37 +37,15 @@ class LLMResponseWidget extends Widget{
     errorHeader.classList.add('error-errorHeader');
     const errorName = error['ename']?.toString()?? 'UndefinedErrorValue';
     const executionCounter=execution_count.toString()
-    errorHeader.innerHTML=`<span class="error-number">[${executionCounter}]</span> ${errorName}`;
-    
-    const errorBox = document.createElement('div');
-    errorBox.classList.add('error-box');
-    const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
-    errorBox.textContent = traceback;
-    
+    errorHeader.innerHTML=`<span class="error-number">Cell [${executionCounter}]</span> ${errorName}`;
+      
     const LLMDescription = document.createElement('div');
     LLMDescription.classList.add('error-LLMDescription');
     LLMDescription.textContent='Waiting for result...';
     errorContainer.appendChild(errorHeader);
-    errorContainer.appendChild(errorBox);
     errorContainer.appendChild(LLMDescription);
 
      return errorContainer;
-  }
-  async logSuccess(execution_count:Number, outputArray:String,sourceCode:String): Promise<any>{
-    let token = PageConfig.getToken();
-    const logEndpoint = 'https://demo.colaps.team/jupyterhub/services/askLLM/successLog';
-    const requestData = {executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
-    const response = await fetch(logEndpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData),
-  });
-  if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
   }
   async addLLMResult(execution_count:Number,errors: IOutput[],sourceCode: String): Promise<void>{
     for (const error of errors){;
@@ -91,7 +69,7 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, errorName:String, traceback:String,sourceCode:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'https://demo.colaps.team/jupyterhub/services/askLLM/';
+      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/';
       const requestData = {executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {
@@ -111,8 +89,13 @@ class LLMResponseWidget extends Widget{
   };
 
 function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebookTracker: NotebookTracker, notebookPanel:NotebookPanel, restorer:ILayoutRestorer){
+
+
+
+
   
-  console.log('JupyterLab LLM extension is active');
+  
+  console.log('JupyterLab LLM development env extension is active');
   let widget: MainAreaWidget<LLMResponseWidget>;
 
   /* Tracker is not working right now, might not be necessay
@@ -122,42 +105,37 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     label: 'LLM Widget',
     execute: () => {
       if (!widget || widget.isDisposed) {
-        const content = new LLMResponseWidget();
-        widget = new MainAreaWidget({content});
-        widget.id = 'LLMHelp-jupyterlab';
-        widget.title.label = 'LLM Help';
-        widget.title.closable = true;
-      }
-      if (!tracker.has(widget)) {
-        // Track the state of the widget for later restoration
-        tracker.add(widget);
+        setWidget()
       }
       if (!widget.isAttached) {
         // Attach the widget to the main work area if it's not there
-        app.shell.add(widget, 'main');
+        app.shell.add(widget, 'main',{ mode: 'split-right' });
       }
       // Activate the widget
-      app.shell.activateById(widget.id);
-    }
-  });
+      activateWidget()
+        
+      
+
+  }});
+  function setWidget(){
+    const content = new LLMResponseWidget();
+    widget = new MainAreaWidget({content});
+    widget.id = 'LLMHelp-jupyterlab';
+    widget.title.label = 'LLM Help';
+    widget.title.closable = true;
+  }
+  function activateWidget(){
+    app.shell.activateById(widget.id);
+  }
 
   // Add the command to the palette.
   palette.addItem({ command, category: 'Tutorial' });
 
-  // Track and restore the widget state => Needs serialization function, if I want to add it.
 
-  let tracker = new WidgetTracker<MainAreaWidget<LLMResponseWidget>>({
-    namespace: 'LLMWidget'
-  });
-  if (restorer) {
-    restorer.restore(tracker, {
-      command,
-      name: () => 'LLMWidget'
-    });
-  }
   NotebookActions.executed.connect((_, args) => {
     const { cell, success } = args;
     if (cell) {
+      console.log(3)
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellJson = cell.model.toJSON();
@@ -180,12 +158,17 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           console.log('Output'+outputArray);
         }
         if (!success) {
+        if (!widget || widget.isDisposed){
+          setWidget()
+          activateWidget()
+          app.shell.add(widget, 'main',{ mode: 'split-right' });
+          }
           console.log('Error in Code, sending to LLM');
           widget.content.addLLMResult(execution_count,errors,sourceCode);
         }
         if (success) {
           const output=JSON.stringify(outputArray);
-          widget.content.logSuccess(execution_count,output,sourceCode);
+          logSuccess(execution_count,output,sourceCode);
           console.log('Logging successful cell run');
         }
       }
@@ -195,10 +178,28 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   });
   console.log('JupyterLab frontend extension testing is activated!');
   console.log('ICommandPalette:',palette);
+
+  async function logSuccess(execution_count:Number, outputArray:String,sourceCode:String): Promise<any>{
+    let token = PageConfig.getToken();
+    const logEndpoint = 'https://localhost:8533/jupyterhub/services/askLLM/successLog';
+    const requestData = {executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
+    const response = await fetch(logEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`, 
+        'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
+  });
+  if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+  }
+
 }
 
 
-
+ 
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'myextension:plugin',
   description: 'A JupyterLab extension.',
