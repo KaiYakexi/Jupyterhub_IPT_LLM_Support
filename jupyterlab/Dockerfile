@@ -8,8 +8,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     npm install -g yarn
 RUN cd /extension && \
     pip install -ve . && \
+    jlpm && \
     jlpm install && \
     jlpm run build && \
+    pip install -ve . && \
     cd .. && \
     rm -rf /extension 
         

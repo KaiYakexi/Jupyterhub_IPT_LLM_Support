@@ -11,6 +11,7 @@ from flask import Flask, Response, make_response, redirect, request, session, js
 from openai import OpenAI
 from jupyterhub.services.auth import HubOAuth
 from bson import json_util
+import datetime
 
 def get_db():
     mongoClient= MongoClient(host='mongodb',
@@ -28,17 +29,10 @@ prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 auth = HubOAuth(api_token=os.environ['JUPYTERHUB_API_TOKEN'], cache_max_age=60)
 
 app = Flask(__name__)
-# encryption key for session cookies
+
 app.secret_key = secrets.token_bytes(32)
 
-
 client= OpenAI(api_key="***REMOVED***")
-
-
-# Initialize conversation history
-conversation_history = [
-    {"role": "system", "content": "You are a programming expert. Answer questions about programming, including debugging code and explaining errors."}
-]
 
 def sendRequestToLLM(execution_counter,error_name,traceback,source_code):
     prompt = f"""
@@ -69,12 +63,12 @@ def authenticated(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         # Check for a token in the session
-        token = session.get("token")
+        token = session.get('token')
 
         # Allow API token authentication via headers
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
 
         if token:
             user = auth.user_for_token(token)
@@ -84,12 +78,12 @@ def authenticated(f):
         if user:
             return f(user, *args, **kwargs)
         else:
-            return Response("Unauthorized", status=401)
+            return Response('Unauthorized', status=401)
 
     return decorated
-@app.route(prefix+"testDB", methods=['GET'])
+@app.route(prefix+'testDB', methods=['GET'])
 def testDB():
-    try:     
+    try:
         db=get_db()
         _loggedData = db.loggedData_data.find()
         loggedData = json_util.dumps(list(_loggedData))
@@ -101,39 +95,45 @@ def testDB():
         return Response(
             json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
         )
+    finally:
+        return Response(
+            json.dumps({"hey":"hey"},indent=1, sort_keys=True), mimetype='application/json')
         
-@app.route(prefix+"successLog", methods=['POST'])
+@app.route(prefix+'successLog', methods=['POST'])
 @authenticated
 def successLog(user):
     try:
         data=request.json
         db= get_db()
         result=db.loggedData_data.insert_one(data)
-        return jsonify({"success": True, "message": "Data uploaded successfully", "id": str(result.inserted_id)})
+        return jsonify({'success': True, 'message': 'Data uploaded successfully', 'id': str(result.inserted_id)})
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)})
         
-@app.route(prefix, methods=['POST'])
+@app.route(prefix+"errorLog", methods=['POST'])
 @authenticated
 def askLLM(user):
     try:
         data = request.json
+        receptionTS= datetime.datetime.now().timestamp()
         execution_counter=data.get('execution_counter')
         error_name=data.get('error_name')
         traceback=data.get('traceback')
         source_code=data.get('source_text')
-        print(execution_counter)
-        print(execution_counter,error_name,traceback,source_code)
-        
         if not data:
             return Response(
                 json.dumps({'error': 'No payload received'},status=400)
             )
-        #LLMResponse= sendRequestToLLM(execution_counter,error_name,traceback,source_code)
-        #response={'LLMResponse':LLMResponse}
+        LLMResponse= sendRequestToLLM(execution_counter,error_name,traceback,source_code)
+        response={'LLMResponse':LLMResponse}
+        sendTS=datetime.datetime.now().timestamp()
         db= get_db()
+        data['user']=user['name']
+        data['receptionTS']=receptionTS
+        data['sendTS']=sendTS
+        data['LLMResponse']=LLMResponse
+        db=get_db()
         db.loggedData_data.insert_one(data)
-        response={'LLMResponse':"""LLM Mock Answer"""}
         return Response(
             json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
         )
