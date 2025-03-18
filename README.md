@@ -1,2 +1,2 @@
 Add Readme
-docker build -t jupyterlab-llmextension . --no-cache
+docker build -t jupyterlab-JupterlabCustomPrompt . --no-cache

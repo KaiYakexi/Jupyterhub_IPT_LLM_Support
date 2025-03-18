@@ -22,16 +22,26 @@ notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
 c.DockerSpawner.notebook_dir = notebook_dir
 
 c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir }
-c.DockerSpawner.image = "jupyterlab-llmextension:latest"
+#c.DockerSpawner.image = "jupyterlab-llmextension:latest"
 
 # Persistence
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 
 # Enable user registration
-c.Authenticator.allowed_users = {'ye','myadmin','tester','irene'}
+c.Authenticator.allowed_users = {'ye','myadmin','tester','irene','demo-user'}
 c.Authenticator.admin_users = {'myadmin'}
 c.NativeAuthenticator.open_signup = True
 
+def pre_spawn_hook(spawner):
+    group_names = [group.name for group in spawner.user.groups]
+    if 'course1' in group_names:
+        spawner.image = 'JupterlabCustomPrompt:latest'
+    elif 'course2' in group_names:
+        spawner.image = 'JupyterlabNoSupport:latest'
+    else:
+        spawner.image = 'JupyterlabGenericSupport:latest'
+
+c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
 c.JupyterHub.services = [
     {
