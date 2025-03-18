@@ -49,8 +49,7 @@ class LLMResponseWidget extends Widget{
       console.log(errorData);
       const promptContainer= document.createElement('div');
       promptContainer.classList.add('prompt-container');
-      const inputField = document.createElement('input');
-      inputField.type = 'text';
+      const inputField = document.createElement('textarea');
       inputField.placeholder = 'Write your own prompt to ask the large language model...';
       const inputButton = document.createElement('button');
       inputButton.textContent='Send Prompt to LLM';

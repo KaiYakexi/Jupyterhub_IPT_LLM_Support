@@ -35,11 +35,11 @@ c.NativeAuthenticator.open_signup = True
 def pre_spawn_hook(spawner):
     group_names = [group.name for group in spawner.user.groups]
     if 'course1' in group_names:
-        spawner.image = 'JupterlabCustomPrompt:latest'
+        spawner.image = 'jupyterlab-customprompt:latest'
     elif 'course2' in group_names:
-        spawner.image = 'JupyterlabNoSupport:latest'
+        spawner.image = 'jupyterlab-nosupport:latest'
     else:
-        spawner.image = 'JupyterlabGenericSupport:latest'
+        spawner.image = 'jupyterlab-genericsupport:latest'
 
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
