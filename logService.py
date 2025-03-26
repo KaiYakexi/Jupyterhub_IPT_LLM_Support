@@ -41,11 +41,11 @@ def sendRequestToLLM(data):
         prompt=data['customPrompt']
     elif data['supportType']=='genericSupport':
         prompt = f"""
-    How do I solve a {data['error_name']} error in Python?
+    How do I solve a {data['errorName']} error in Python?
     """
     elif data['supportType']=='personalizedSupport':
         prompt = f"""
-    How do I solve this {data['error_name']} in Python, this is my traceback: {data['traceback']}
+    How do I solve this {data['errorName']} in Python, this is my traceback: {data['traceback']}
     and this is my source code: {data['sourceCode']}   
 """
     completion = client.chat.completions.create(
@@ -81,6 +81,25 @@ def authenticated(f):
             return Response('Unauthorized', status=401)
 
     return decorated
+
+@app.route(prefix+'userSupportGroup', methods=['GET'])
+@authenticated
+def userSupportGroup(user):
+    try:
+        designatedSupportGroup='noSupport'
+        if 'customPrompt' in user['groups']:
+            designatedSupportGroup='customPrompt'
+        elif 'genericSupport' in user['groups']:
+            designatedSupportGroup='genericSupport'
+        elif 'personalizedSupport' in user['groups']:
+            designatedSupportGroup='personalizedSupport'
+        return jsonify({
+            'success': True,
+            'designatedSupportGroup': designatedSupportGroup
+        })
+    except Exception as e:
+        return jsonify({'success':False,'message':str(e)})
+
 @app.route(prefix+'testDB', methods=['GET'])
 def testDB():
     try:
@@ -102,6 +121,7 @@ def testDB():
 def successLog(user):
     try:
         data=request.json
+        print(data)
         receptionTS= datetime.datetime.now().timestamp()
         data['user']=user['name']
         data['receptionTS']=receptionTS
@@ -122,7 +142,7 @@ def askLLM(user):
                 json.dumps({'error': 'No payload received'},status=400)
             )
         LLMResponse=sendRequestToLLM(data)
-        response={'LLMResponse':LLMResponse}          
+        response={'LLMResponse':LLMResponse}
         sendTS=datetime.datetime.now().timestamp()
         db= get_db()
         data['user']=user['name']
