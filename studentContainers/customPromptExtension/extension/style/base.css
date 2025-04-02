@@ -19,7 +19,25 @@
     font-size: 14px;
 
 }
+.promptInput {
+    width: 80%;
+    height: 25%;
+    min-height: 100px;
+    padding: 15px;
+    box-sizing: border-box;
 
+        /* Styling */
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    resize: vertical; /* Allow only vertical resizing */
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    
+    /* Smooth transition for focus effects */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
 /* Space between consecutive error containers */
 .error-container + .error-container {
     margin-top: 20px;

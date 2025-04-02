@@ -50,6 +50,7 @@ class LLMResponseWidget extends Widget{
       const promptContainer= document.createElement('div');
       promptContainer.classList.add('prompt-container');
       const inputField = document.createElement('textarea');
+      inputField.classList.add('promptInput');
       inputField.placeholder = 'Write your own prompt to ask the large language model...';
       const inputButton = document.createElement('button');
       inputButton.textContent='Send Prompt to LLM';
@@ -175,7 +176,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
 
   NotebookActions.executed.connect((_, args) => {
-    const { cell, success } = args;
+    const { cell, success, error, notebook} = args;
+    console.log(error,notebook);
+    const test= cell.model;
+    console.log(test.metadata)
     if (window.sessionStorage.getItem('UseExtension')=='customPrompt'){
     if (cell) {
       const cellModel = cell.model;
@@ -206,6 +210,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           app.shell.add(widget, 'main',{ mode: 'split-right' });
           }
           console.log('Error in Code, sending to LLM');
+          logFailure(execution_count,errors[0],sourceCode);
           widget.content.showPromptField(execution_count,errors[0],sourceCode);
         }
         if (success) {
@@ -225,6 +230,25 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     let token = PageConfig.getToken();
     const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
     const requestData = {supportType:"customPrompt",executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
+    const response = await fetch(successEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`, 
+        'Content-Type': 'application/json' },
+      body: JSON.stringify({"requestData":requestData}),
+  });
+  if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+  }
+  async function logFailure(execution_count:Number,error: IOutput,sourceCode: String): Promise<any>{
+    const executionCounter=execution_count.toString()
+    const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
+    const errorName = error['ename']?.toString()??'UndefinedErrorValue';
+    let token = PageConfig.getToken();
+    const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/failureLog';
+    const requestData = {"supportType":"customPrompt",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {

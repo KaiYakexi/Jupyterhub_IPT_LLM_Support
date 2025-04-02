@@ -115,6 +115,7 @@ def testDB():
             json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
         )
 
+
         
 @app.route(prefix+'successLog', methods=['POST'])
 @authenticated
@@ -126,8 +127,8 @@ def successLog(user):
         data['user']=user['name']
         data['receptionTS']=receptionTS
         db= get_db()
-        result=db.loggedData_data.insert_one(data)
-        return jsonify({'success': True, 'message': 'Data uploaded successfully', 'id': str(result.inserted_id)})
+        db.loggedData_data.insert_one(data)
+        return jsonify({'success': True, 'message': 'Data uploaded successfully'})
     except Exception as e:
         return jsonify({'success':False, 'message':str(e)})
         
@@ -158,3 +159,23 @@ def askLLM(user):
         return jsonify({'success':False,'message':str(e)})
 
 
+@app.route(prefix+"noSupportLogBeforeCustomPrompt", methods=['POST'])
+@authenticated
+def askLLM(user):
+    try:
+        data = request.json
+        receptionTS= datetime.datetime.now().timestamp()
+        if not data:
+            return Response(
+                json.dumps({'error': 'No payload received'},status=400)
+            )
+        sendTS=datetime.datetime.now().timestamp()
+        db= get_db()
+        data['user']=user['name']
+        data['receptionTS']=receptionTS
+        data['sendTS']=sendTS
+        db=get_db()
+        db.loggedData_data.insert_one(data)
+        return jsonify({'success': True, 'message': 'Data uploaded successfully'})
+    except Exception as e:
+        return jsonify({'success':False,'message':str(e)})

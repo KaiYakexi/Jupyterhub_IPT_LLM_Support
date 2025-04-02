@@ -206,7 +206,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
  
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'LLMExtensionGenericSupport:plugin',
+  id: 'LLMExtensionGenericSupports:plugin',
   description: 'A JupyterLab LLM help extension.',
   autoStart: true,
   requires: [ICommandPalette, INotebookTracker],

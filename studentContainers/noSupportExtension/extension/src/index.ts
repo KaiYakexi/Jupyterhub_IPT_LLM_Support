@@ -238,7 +238,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   async function logFailure(executionCounter:String, errorName:String, traceback:String,sourceCode:String): Promise<any> {
     let token = PageConfig.getToken();
-    const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+    const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/noSupportLogBeforeCustomPrompt';
     const requestData = {"supportType":"noSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
     const response = await fetch(HubLLMEndpoint, {
