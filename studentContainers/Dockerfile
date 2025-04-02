@@ -5,9 +5,7 @@ COPY ./genericSupportExtension/extension /extension/genericSupport
 COPY ./noSupportExtension/extension /extension/noSupport
 COPY ./personalizedSupportExtension/extension /extension/personalizedSupport
 COPY ./extensionManager/extension /extension/extensionManager
-
-COPY --chown=$NB_USER:$NB_GID ./courses/course1/cours1exercise1.ipynb  /home/jovyan/work
-COPY --chown=$NB_USER:$NB_GID ./courses/course1/cours1exercise2.ipynb  /home/jovyan/work
+COPY --chown=$NB_USER:$NB_GID ./courses/course1/* /home/jovyan/work
 
 USER root
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \

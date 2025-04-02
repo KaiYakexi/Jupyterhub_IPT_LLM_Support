@@ -159,9 +159,9 @@ def askLLM(user):
         return jsonify({'success':False,'message':str(e)})
 
 
-@app.route(prefix+"noSupportLogBeforeCustomPrompt", methods=['POST'])
+@app.route(prefix+"errorLogBeforePrompt", methods=['POST'])
 @authenticated
-def askLLM(user):
+def errorLogBeforePrompt(user):
     try:
         data = request.json
         receptionTS= datetime.datetime.now().timestamp()

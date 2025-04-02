@@ -41,7 +41,7 @@ class LLMResponseWidget extends Widget{
     
   }
   
-  async updateWidget(execution_count:Number,error: IOutput,sourceCode: String): Promise<void>{
+  async updateWidget(execution_count:Number,cellIdentifier:any,error: IOutput,sourceCode: String): Promise<void>{
       const executionCounter=execution_count.toString()
       const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
       const errorName = error['ename']?.toString()??'UndefinedErrorValue';
@@ -55,7 +55,7 @@ class LLMResponseWidget extends Widget{
       })
       this.renderer.renderModel(model);
       try {
-        const data = await askLLM(executionCounter,errorName,traceback,sourceCode) as LLMResponse;
+        const data = await askLLM(executionCounter,cellIdentifier,errorName,traceback,sourceCode) as LLMResponse;
         const model = this._rendermime.createModel({
           data: { 'text/markdown': data['LLMResponse'] }
         });
@@ -71,10 +71,10 @@ class LLMResponseWidget extends Widget{
       errorContainer.scrollIntoView({behavior:'smooth'});
     }
 
-    async function askLLM(executionCounter:String, errorName:String, traceback:String,sourceCode:String): Promise<any> {
+    async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String): Promise<any> {
       let token = PageConfig.getToken();
       const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
-      const requestData = {"supportType":"genericSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
+      const requestData = {'supportType':'genericSupport','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
@@ -143,6 +143,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
+        const cellIdentifier=cellModel.getMetadata('identifier')
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
@@ -157,11 +158,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           else {
              outputArray.push(outputs[i]['text']);}
         }
-         if (outputArray.length>0){
-          console.log('Output Saved as'+JSON.stringify(outputArray));
-          console.log('Source'+sourceCode);
-          console.log('Output'+outputArray);
-        }
         if (!success) {
         if (!widget || widget.isDisposed){
           setWidget()
@@ -169,11 +165,11 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           app.shell.add(widget, 'main',{ mode: 'split-right' });
           }
           console.log('Error in Code, sending to LLM');
-          widget.content.updateWidget(execution_count,errors[0],sourceCode);
+          widget.content.updateWidget(execution_count,cellIdentifier,errors[0],sourceCode);
         }
         if (success) {
           const output=JSON.stringify(outputArray);
-          logSuccess(execution_count,output,sourceCode);
+          logSuccess(execution_count,cellIdentifier,output,sourceCode);
           console.log('Logging successful cell run');
         }
       }
@@ -184,10 +180,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   console.log('JupyterLab frontend extension testing is activated now!');
   console.log('ICommandPalette:',palette);
 
-  async function logSuccess(execution_count:Number, outputArray:String,sourceCode:String): Promise<any>{
+  async function logSuccess(execution_count:Number,cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
     const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
-    const requestData = {"supportType":"genericSupport",executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
+    const requestData = {'supportType':'genericSupport','cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {

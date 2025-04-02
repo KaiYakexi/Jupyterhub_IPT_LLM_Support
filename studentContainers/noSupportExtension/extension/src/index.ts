@@ -181,6 +181,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
+        const cellIdentifier=cellModel.getMetadata('identifier')
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
@@ -195,21 +196,16 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           else {
              outputArray.push(outputs[i]['text']);}
         }
-         if (outputArray.length>0){
-          console.log('Output Saved as'+JSON.stringify(outputArray));
-          console.log('Source'+sourceCode);
-          console.log('Output'+outputArray);
-        }
         if (!success) {
           console.log('Error in Code, sending to LLM');
           const executionCounter=execution_count.toString()
           const traceback = errors[0]['traceback']?.toString()??'UndefinedErrorValue';
           const errorName = errors[0]['ename']?.toString()??'UndefinedErrorValue';
-          logFailure(executionCounter,errorName,traceback,sourceCode)
+          logFailure(executionCounter,cellIdentifier,errorName,traceback,sourceCode)
         }
         if (success) {
           const output=JSON.stringify(outputArray);
-          logSuccess(execution_count,output,sourceCode);
+          logSuccess(execution_count,cellIdentifier,output,sourceCode);
           console.log('Logging successful cell run');
         }
       }
@@ -220,10 +216,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   console.log('JupyterLab frontend extension testing is activated now!');
   console.log('ICommandPalette:',palette);
 
-  async function logSuccess(execution_count:Number, outputArray:String,sourceCode:String): Promise<any>{
+  async function logSuccess(execution_count:Number, cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
     const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
-    const requestData = {supportType:"noSupport",executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
+    const requestData = {supportType:'noSupport','cellIdentifier':cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {
@@ -236,10 +232,10 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   }
   return response.json();
   }
-  async function logFailure(executionCounter:String, errorName:String, traceback:String,sourceCode:String): Promise<any> {
+  async function logFailure(executionCounter:String,cellIdentifier:any, errorName:String, traceback:String,sourceCode:String): Promise<any> {
     let token = PageConfig.getToken();
-    const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/noSupportLogBeforeCustomPrompt';
-    const requestData = {"supportType":"noSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
+    const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+    const requestData = {'supportType':'noSupport','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
     const response = await fetch(HubLLMEndpoint, {
       method: 'POST',
