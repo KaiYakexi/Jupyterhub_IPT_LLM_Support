@@ -141,6 +141,13 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
   console.log('JupyterLab LLM development env extension is actives now Check');
   let widget: MainAreaWidget<LLMResponseWidget>;
 
+
+  notebookTracker.currentChanged.connect(() => {
+    const notebookPanel = notebookTracker.currentWidget;
+    if (notebookPanel) {
+      console.log('Current notebook:', notebookPanel);
+    }
+  });
   /* Tracker is not working right now, might not be necessay
   if I want it to work tho, I will probably have to serialize the widget */
   const command: string = 'customSupport:open';
