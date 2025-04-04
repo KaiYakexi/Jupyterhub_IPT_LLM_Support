@@ -11,6 +11,9 @@ LLMExtensionCustomPrompt/labextension
 # Version file is handled by hatchling
 LLMExtensionCustomPrompt/_version.py
 
+# OS system
+.DS_Store
+
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 

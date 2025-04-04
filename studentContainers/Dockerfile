@@ -51,6 +51,10 @@ RUN cd /extension/extensionManager && \
     jlpm run build && \
     cd .. && \
     rm -rf /extension/extensionManager
+
+RUN git clone https://github.com/KaiYakexi/jupy-cell-lock.git /jupy-cell-lock && \
+    cd /jupy-cell-lock && \
+    pip install .
         
 USER ${NB_USER}
 
