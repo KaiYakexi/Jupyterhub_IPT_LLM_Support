@@ -6,6 +6,9 @@ RUN pip install --no-cache \
     jupyterhub-nativeauthenticator \
     flask \
     pymongo \
-    openai 
+    openai \
+    requests \
+    werkzeug
 
+    
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py

@@ -7,7 +7,7 @@ SRC_DIR="/Users/yasin/Documents/GitHub/Jupyterhub_LLM_Extension/studentContainer
 DEST_DIR="/home/jovyan/work"
 
 # Get all container IDs running the jupyterlab-courseone image
-CONTAINERS=$(docker ps --filter "ancestor=jupyterlab-courseone" --format "{{.ID}}")
+CONTAINERS=$(docker ps --filter "label=courseName=ILE" --format "{{.ID}}")
 
 # Check if any containers are running
 if [ -z "$CONTAINERS" ]; then

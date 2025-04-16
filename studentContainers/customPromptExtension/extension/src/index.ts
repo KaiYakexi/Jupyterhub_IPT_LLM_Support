@@ -112,7 +112,7 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, cellIdentifier:any,errorName:String, traceback:String,sourceCode:String,prompt:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
+      const HubLLMEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/errorLog';
       const requestData = {'supportType':'customPrompt','cellIdentifier':cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,"customPrompt":prompt};
 
       const response = await fetch(HubLLMEndpoint, {
@@ -229,7 +229,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   async function logSuccess(execution_count:Number, cellIdentifier:any,outputArray:String,sourceCode:String): Promise<any>{
     let token = PageConfig.getToken();
-    const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/successLog';
+    const successEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/successLog';
     const requestData = {supportType:'customPrompt',cellIdentifier:cellIdentifier,executionCounter: execution_count,outputArray:outputArray,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',
@@ -248,7 +248,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     const traceback = error['traceback']?.toString()??'UndefinedErrorValue';
     const errorName = error['ename']?.toString()??'UndefinedErrorValue';
     let token = PageConfig.getToken();
-    const successEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLogBeforePrompt';
+    const successEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/errorLogBeforePrompt';
     const requestData = {'supportType':'customPrompt',"failureRegistered":true,cellIdentifier:cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
     const response = await fetch(successEndpoint, {
       method: 'POST',

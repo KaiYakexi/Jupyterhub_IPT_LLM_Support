@@ -2,6 +2,8 @@ from dockerspawner import DockerSpawner
 from nativeauthenticator import NativeAuthenticator
 import os
 
+c.Jupyterhub_template.paths=['/srv/jupyterhub/templates']
+
 c.JupyterHub.authenticator_class = NativeAuthenticator
 c.JupyterHub.base_url='/jupyterhub'
 
@@ -18,10 +20,10 @@ c.JupyterHub.spawner_class = DockerSpawner
 c.NativeAuthenticator.create_system_users = True
 
 
-notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
-c.DockerSpawner.notebook_dir = notebook_dir
+#notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
+#c.DockerSpawner.notebook_dir = notebook_dir
 
-c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir }
+#c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir }
 #c.DockerSpawner.image = "jupyterlab-llmextension:latest"
 
 # Persistence
@@ -35,8 +37,11 @@ c.NativeAuthenticator.open_signup = True
 
 def pre_spawn_hook(spawner):
     group_names = [group.name for group in spawner.user.groups]
-    if 'course1' in group_names:
-        spawner.image = 'jupyterlab-courseone:latest'
+    if '$COURSE_NAME' in group_names:
+        spawner.volumes={ 'jupyterhub-user-{username}': '/home/jovyan/work',
+                         '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY':'/tmp/source'}
+        spawner.notebook_dir='/home/jovyan/work'
+        spawner.image = '$STUDENT_IMAGE_NAME:latest'
     elif 'course2' in group_names:
         spawner.image = 'jupyterlab-coursetwo:latest'
     else:
@@ -58,6 +63,9 @@ c.JupyterHub.load_roles = [
         'scopes': [
             'access:services!service=askLLM',  # access this service
             'self',  # and all of the standard things for a user
+            'admin:users',
+            'admin:groups',
+            
         ],
     }
 ]
