@@ -8,7 +8,8 @@ RUN pip install --no-cache \
     pymongo \
     openai \
     requests \
-    werkzeug
+    werkzeug \
+    gunicorn
 
     
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py

@@ -25,6 +25,11 @@ unset_explicit_env_vars () {
         unset JUPYTER_ENV_VARS_TO_UNSET
     fi
 }
+#
+#
+# Adds .ipynb files on startup to work directory of user
+#
+#
 if [ -d "/tmp/source" ]; then
     cp -n -r /tmp/source/*.ipynb "${HOME}/work/" 2>/dev/null || :
     chown -R ${NB_UID}:${NB_GID} "${HOME}/work"

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Source directory containing .ipynb files on the host
-SRC_DIR="/Users/yasin/Documents/GitHub/Jupyterhub_LLM_Extension/studentContainers/courses/course1"
+SRC_DIR="$ABSOLUTE_PATH_TO_COURSE_DIRECTORY"
 
 # Destination directory inside the container (adjust based on your setup)
 DEST_DIR="/home/jovyan/work"
 
 # Get all container IDs running the jupyterlab-courseone image
-CONTAINERS=$(docker ps --filter "label=courseName=ILE" --format "{{.ID}}")
+CONTAINERS=$(docker ps --filter "label=courseName=$COURSE_NAME" --format "{{.ID}}")
 
 # Check if any containers are running
 if [ -z "$CONTAINERS" ]; then

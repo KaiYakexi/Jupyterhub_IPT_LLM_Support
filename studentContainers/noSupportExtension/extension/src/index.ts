@@ -111,8 +111,8 @@ class LLMResponseWidget extends Widget{
 
     async function askLLM(executionCounter:String, errorName:String, traceback:String,sourceCode:String,prompt:String): Promise<any> {
       let token = PageConfig.getToken();
-      const HubLLMEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/errorLog';
-      const requestData = {"supportType":"noSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,"customPrompt":prompt};
+      const HubLLMEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/errorLog';
+      const requestData = {"supportType":"noSupport",executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
 
       const response = await fetch(HubLLMEndpoint, {
         method: 'POST',
@@ -203,7 +203,6 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
              outputArray.push(outputs[i]['text']);}
         }
         if (!success) {
-          console.log('Error in Code, sending to LLM');
           const executionCounter=execution_count.toString()
           const traceback = errors[0]['traceback']?.toString()??'UndefinedErrorValue';
           const errorName = errors[0]['ename']?.toString()??'UndefinedErrorValue';
@@ -212,11 +211,9 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         if (success) {
           const output=JSON.stringify(outputArray);
           logSuccess(execution_count,cellIdentifier,output,sourceCode);
-          console.log('Logging successful cell run');
         }
       }
     } else {
-      console.error('Cell is undefined or null.');
     }
   }});
   console.log('JupyterLab frontend extension testing is activated now!');

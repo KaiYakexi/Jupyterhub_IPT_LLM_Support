@@ -249,7 +249,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
     const errorName = error['ename']?.toString()??'UndefinedErrorValue';
     let token = PageConfig.getToken();
     const successEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/errorLogBeforePrompt';
-    const requestData = {'supportType':'customPrompt',"failureRegistered":true,cellIdentifier:cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode};
+    const requestData = {'supportType':'customPrompt',cellIdentifier:cellIdentifier,executionCounter: executionCounter,errorName:errorName,traceback:traceback,sourceCode:sourceCode,'logFailureBeforePrompt':true};
     const response = await fetch(successEndpoint, {
       method: 'POST',
       headers: {

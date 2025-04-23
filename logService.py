@@ -14,8 +14,7 @@ from bson import json_util
 import datetime
 import requests
 from werkzeug.utils import secure_filename
-
-
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 def get_db():
     mongoClient= MongoClient(host='mongodb',
@@ -34,10 +33,10 @@ prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 auth = HubAuth(api_token=os.environ['JUPYTERHUB_API_TOKEN'], cache_max_age=60)
 oauth = HubOAuth(api_token=os.environ['JUPYTERHUB_API_TOKEN'], cache_max_age=60)
 
-HEADERS = {'Authorization': 'token ***REMOVED***'}
+#HEADERS = {'Authorization': 'token ***REMOVED***'}
 
 app = Flask(__name__)
-
+app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
 app.secret_key = secrets.token_bytes(32)
 
 client= OpenAI(api_key="$OPENAI_API_KEY")
@@ -46,7 +45,7 @@ def sendRequestToLLM(data):
     if data['supportType']=='noSupport':
         return
     elif data['supportType']=='customPrompt':
-        prompt=data['customPrompt']
+        prompt=f"""{data['customPrompt']}+{data['sourceCode']}+{data['traceback']}"""
     elif data['supportType']=='genericSupport':
         prompt = f"""
     How do I solve a {data['errorName']} error in Python?
@@ -152,20 +151,21 @@ def userSupportGroup(user):
 
 
 
-@app.route(prefix+'testDB', methods=['GET'])
-def testDB():
-    try:
-        db=get_db()
-        _loggedData = db.loggedData_data.find()
-        loggedData = json_util.dumps(list(_loggedData))
-        response={'Data': loggedData}
-        return Response(
-            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-        )
-    except Exception as e:
-        return Response(
-            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
-        )
+#@app.route(prefix+'testDB', methods=['GET'])
+#@oauthenticated
+#def testDB(user):
+#    try:
+#        db=get_db()
+#        _loggedData = db.loggedData_data.find()
+#        loggedData = json_util.dumps(list(_loggedData))
+#        response={'Data': loggedData}
+#        return Response(
+#            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
+#        )
+#    except Exception as e:
+#        return Response(
+#            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
+#        )
 
 
         
@@ -211,40 +211,37 @@ def askLLM(user):
         return jsonify({'success':False,'message':str(e)})
 
 
-def get_groups():
-    response = requests.get(f'{JUPYTERHUB_URL}/api/groups', headers=HEADERS)
-    response.raise_for_status()
-    return response.json()
+#def get_groups():
+#    response = requests.get(f'{JUPYTERHUB_URL}/api/groups', headers=HEADERS)
+#    response.raise_for_status()
+#    return response.json()
 
-def get_group_roles(group_name):
-    """Get roles assigned to a group."""
-    response = requests.get(f'{JUPYTERHUB_URL}/api/groups/{group_name}/', headers=HEADERS)
-    response.raise_for_status()
-    data=response.json
-    return [data]
+#def get_group_roles(group_name):
+#    """Get roles assigned to a group."""
+#    response = requests.get(f'{JUPYTERHUB_URL}/api/groups/{group_name}/', headers=HEADERS)
+#    response.raise_for_status()
+#    data=response.json
+#    return [data]
 
-def update_group_roles(group_name, new_roles):
-    """Update the roles assigned to a group."""
-    data = {'roles': new_roles}
-    response = requests.delete(
-        f'{JUPYTERHUB_URL}/api/groups/{group_name}/users',
-        headers=HEADERS,
-        json=data
-    )
-    response.raise_for_status()
+#def update_group_roles(group_name, new_roles):
+#    """Update the roles assigned to a group."""
+#    data = {'roles': new_roles}
+#    response = requests.delete(
+#        f'{JUPYTERHUB_URL}/api/groups/{group_name}/users',
+#        headers=HEADERS,
+#        json=data
+#    )
+#    response.raise_for_status()
 
-@app.route(prefix+"changeRole", methods=['GET'])
-def changeRole():
-    groups = get_groups()
-    return jsonify({'success': True, 'current':groups,'message': 'Data uploaded successfully'})
+#@app.route(prefix+"changeRole", methods=['GET'])
+#def changeRole():
+#    groups = get_groups()
+#    return jsonify({'success': True, 'current':groups,'message': 'Data uploaded successfully'})
 
 @app.route(prefix, methods=['GET'])
 @oauthenticated
 def adminPage(user):
     return render_template('index.html')
-    return Response(
-        json.dumps(user, indent=1, sort_keys=True), mimetype='application/json'
-    )
 
 
 @app.route(prefix+"errorLogBeforePrompt", methods=['POST'])
