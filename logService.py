@@ -33,10 +33,10 @@ prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 auth = HubAuth(api_token=os.environ['JUPYTERHUB_API_TOKEN'], cache_max_age=60)
 oauth = HubOAuth(api_token=os.environ['JUPYTERHUB_API_TOKEN'], cache_max_age=60)
 
-#HEADERS = {'Authorization': 'token ***REMOVED***'}
+#HEADERS = {'Authorization': 'token '}
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=3, x_proto=3,x_host=3,x_prefix=3 )
 app.secret_key = secrets.token_bytes(32)
 
 client= OpenAI(api_key="$OPENAI_API_KEY")
