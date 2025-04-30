@@ -193,6 +193,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
+        if (execution_count){
         const outputCast = <CodeCellModel>cell.model;
         const outputs = outputCast.sharedModel.outputs;
         let outputArray=[];
@@ -220,7 +221,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           console.log('Logging successful cell run');
         }
       }
-    } else {
+    }
+  } else {
       console.error('Cell is undefined or null.');
     }
   }});

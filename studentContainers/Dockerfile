@@ -7,13 +7,13 @@ COPY ./personalizedSupportExtension/extension /extension/personalizedSupport
 COPY ./extensionManager/extension /extension/extensionManager
 
 USER root
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
 
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g yarn
 
+RUN pip install nbgitpuller
+    
 RUN cd /extension/customPrompt && \
     pip install -ve . && \
     jlpm && \
@@ -60,4 +60,6 @@ RUN git clone https://github.com/KaiYakexi/jupy-cell-lock.git /jupy-cell-lock &&
 
 RUN jupyter labextension list
         
+RUN jupyter labextension disable @jupyterlab/extensionmanager-extension
+
 USER ${NB_USER}

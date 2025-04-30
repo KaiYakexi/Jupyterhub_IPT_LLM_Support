@@ -29,8 +29,7 @@ c.NativeAuthenticator.open_signup = True
 def pre_spawn_hook(spawner):
     group_names = [group.name for group in spawner.user.groups]
     if '$COURSE_NAME' in group_names:
-        spawner.volumes={ 'jupyterhub-user-{username}': '/home/jovyan/work',
-                         '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY':'/tmp/source'}
+        spawner.volumes={ 'jupyterhub-user-{username}': '/home/jovyan/work'}
         spawner.notebook_dir='/home/jovyan/work'
         spawner.image = '$STUDENT_IMAGE_NAME:latest'
     elif 'course2' in group_names:

@@ -9,7 +9,8 @@ RUN pip install --no-cache \
     openai \
     requests \
     werkzeug \
-    gunicorn
+    gunicorn \
+    nbgitpuller
 
     
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py

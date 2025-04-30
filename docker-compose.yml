@@ -11,13 +11,11 @@ services:
       - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
       - jupyterhub_data:/srv/jupyterhub/data
       - ./logService.py:/srv/jupyterhub/logService.py
-    #  - ./studentContainers/courses/course1:/studentContainers/courses/course1
     ports:
       - "8533:8000"
     networks:
       - jupyterhub
-    extra_hosts:
-      - "host.docker.internal:127.17.0.1"
+
   db:
     image: mongo:latest
     hostname: mongodb

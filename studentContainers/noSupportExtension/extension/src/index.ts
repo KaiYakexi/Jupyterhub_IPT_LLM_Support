@@ -191,6 +191,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
+        if (execution_count){
         const outputCast = <CodeCellModel>cell.model;
         const outputs = outputCast.sharedModel.outputs;
         let outputArray=[];
@@ -213,7 +214,8 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           logSuccess(execution_count,cellIdentifier,output,sourceCode);
         }
       }
-    } else {
+    }
+   } else {
     }
   }});
   console.log('JupyterLab frontend extension testing is activated now!');

@@ -1,16 +1,3 @@
-FILES=(
-    ".env"
-    "jupyterhub_config.py"
-    "logService.py"
-    "docker-compose.yml"
-    "studentContainers/extensionManager/extension/src/index.ts"
-    "studentContainers/genericPromptExtension/extension/src/index.ts"
-    "studentContainers/personalizedPromptExtension/extension/src/index.ts"
-    "studentContainers/noSupportExtension/extension/src/index.ts"
-    "studentContainers/customPromptExtension/extension/src/index.ts"
-)
-
-
 set -a
 source ./.env
 set +a
@@ -25,10 +12,6 @@ sed -i "s|\$MONGO_INITDB_ROOT_PASSWORD|$MONGO_INITDB_ROOT_PASSWORD|g" "docker-co
 
 sed -i "s|\$COURSE_NAME|$COURSE_NAME|g" "jupyterhub_config.py"
 sed -i "s|\$STUDENT_IMAGE_NAME|$STUDENT_IMAGE_NAME|g" "jupyterhub_config.py"
-sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "jupyterhub_config.py"
-
-sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "./studentContainers/courses/addToContainer.sh"
-sed -i "s|\$COURSE_NAME|$COURSE_NAME|g" "./studentContainers/courses/addToContainer.sh"
 
 sed -i "s|\$JUPYTERHUB_URL|$JUPYTERHUB_URL|g" "./studentContainers/extensionManager/extension/src/index.ts"
 sed -i "s|\$JUPYTERHUB_URL|$JUPYTERHUB_URL|g" "./studentContainers/noSupportExtension/extension/src/index.ts"
@@ -41,4 +24,3 @@ docker build -t ${STUDENT_IMAGE_NAME}:latest --label "courseName=${COURSE_NAME}"
 
 docker compose build --no-cache
 docker compose up -d
-docker compose ps
