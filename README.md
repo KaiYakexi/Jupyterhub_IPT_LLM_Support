@@ -23,6 +23,7 @@ Scheme: http
 Forward Hostname/IP: jupyterhub
 Forward Port: 8000
 Websockets Support: Yes
+Block Common explots: Yes
 ```
     
 # Custom locations:
