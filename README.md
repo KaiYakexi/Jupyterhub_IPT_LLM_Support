@@ -35,11 +35,15 @@ Click on the settings symbol next to location and paste:
 proxy_set_header X-Forwarded_Proto $scheme;
 ```
 # SSL:
+```
 Choose certificate and Force SSL and click on saved once finished.
-14. go to domain.com/jupyterhub
-15. Click on sign up and sign up with the admin username specified in the .env
-16. After logging in, you will see, that your jupyterlab server is not starting, you will need to go to the admin page /jupyterhub/hub/admin -> Manage groups -> New Group -> coursename specified in .env as group name -> add users to the group -> apply.
-17. Do the same for the groups "customPrompt", "noSupport","personalizedSupport", "genericSupport". But only assign your user to one of these groups.
+```
+
+# Jupyterhub Setup
+1. go to domain.com/jupyterhub
+2. Click on sign up and sign up with the admin username specified in the .env
+3. After logging in, you will see, that your jupyterlab server is not starting, you will need to go to the admin page /jupyterhub/hub/admin -> Manage groups -> New Group -> coursename specified in .env as group name -> add users to the group -> apply.
+4. Do the same for the groups "customPrompt", "noSupport","personalizedSupport", "genericSupport". But only assign your user to one of these groups.
 
 # How to share course materials
 To share course materials, host your materials on a public github server and create a link using nbgitpuller https://nbgitpuller.readthedocs.io/en/latest/link.html.
