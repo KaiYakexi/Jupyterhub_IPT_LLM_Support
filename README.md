@@ -8,9 +8,9 @@
 8. Run docker compose ps, check if nginxproxymanager, db and jupyterhub are running.
 Sometimes db exits, just run docker compose up -d and it should work all fine.
 9. Wait a minute or two, then use SSH Tunnel to access nginxproxymanager.
- #
+ ```
 ssh -L 8493:127.0.0.1:81 username@serverip
- `
+ ```
 10. Once connected, open your browser and go to http://localhost:8493/login
 11. Default login details are: 'admin@example.com' and 'changeme' (you will be asked to change details once logged in)
 12. http://localhost:8493/nginx/certificates -> Add Certificate -> Lets Encrypt or Custom (I just used letsencrypt)
