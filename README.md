@@ -15,23 +15,27 @@ ssh -L 8493:127.0.0.1:81 username@serverip
 11. Default login details are: 'admin@example.com' and 'changeme' (you will be asked to change details once logged in)
 12. http://localhost:8493/nginx/certificates -> Add Certificate -> Lets Encrypt or Custom (I just used letsencrypt)
 13. http://localhost:8493/nginx/proxy -> Add Proxy Host:
-    Details:
-        Domain name: Domain name
-        Scheme: http
-        Forward Hostname/IP: jupyterhub
-        Forward Port: 8000
-        Websockets Support: Yes
-    Custom locations:
-        location: /jupyterhub/services/askLLM
-        Scheme: http
-        Forward Hostname/IP: jupyterhub
-        Forward Port: 8000
-        Click on the settings symbol next to location and paste:
-        `proxy_set_header X-Forwarded_Proto $scheme;`
-    SSL:
-        Choose certificate and Force SSL
+
+# Details:
+```
+Domain name: Domain name
+Scheme: http
+Forward Hostname/IP: jupyterhub
+Forward Port: 8000
+Websockets Support: Yes
+```
     
-    Click on saved once finished.
+# Custom locations:
+```
+location: /jupyterhub/services/askLLM
+Scheme: http
+Forward Hostname/IP: jupyterhub
+Forward Port: 8000       
+Click on the settings symbol next to location and paste:
+`proxy_set_header X-Forwarded_Proto $scheme;`
+```
+# SSL:
+Choose certificate and Force SSL and click on saved once finished.
 14. go to domain.com/jupyterhub
 15. Click on sign up and sign up with the admin username specified in the .env
 16. After logging in, you will see, that your jupyterlab server is not starting, you will need to go to the admin page /jupyterhub/hub/admin -> Manage groups -> New Group -> coursename specified in .env as group name -> add users to the group -> apply.
