@@ -43,10 +43,10 @@ Choose certificate and Force SSL and click on saved once finished.
 
 # How to share course materials
 To share course materials, host your materials on a public github server and create a link using nbgitpuller https://nbgitpuller.readthedocs.io/en/latest/link.html.
->Jupyterhub URL: https://example.com/jupyterhub
->Git repository URL: https://github.com/sixonenines/course
->Branch: main
->Application to Open: JupyterLab
+* Jupyterhub URL: https://example.com/jupyterhub
+* Git repository URL: https://github.com/sixonenines/course
+* Branch: main
+* Application to Open: JupyterLab
 
 # How to prepare notebooks:
 https://github.com/KaiYakexi/jupy-cell-lock
