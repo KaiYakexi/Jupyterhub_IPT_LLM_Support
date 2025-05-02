@@ -25,12 +25,6 @@ c.Authenticator.allowed_users = {'$ADMIN_USERNAME'}
 c.Authenticator.admin_users = {'$ADMIN_USERNAME'}
 c.NativeAuthenticator.open_signup = True
 
-c.JupyterHub.load_groups = {
-          '$COURSE_NAME': {
-              'users': ['admin'],
-          },
-      }
-
 
 def pre_spawn_hook(spawner):
     group_names = [group.name for group in spawner.user.groups]
@@ -38,6 +32,8 @@ def pre_spawn_hook(spawner):
         spawner.volumes={ 'jupyterhub-user-{username}': '/home/jovyan/work'}
         spawner.notebook_dir='/home/jovyan/work'
         spawner.image = '$STUDENT_IMAGE_NAME:latest'
+    else:
+        spawner.image = 'jupyterlab-nocourse:latest'
 
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
