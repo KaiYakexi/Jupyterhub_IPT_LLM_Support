@@ -21,8 +21,8 @@ services:
     hostname: mongodb
     environment:
       - MONGO_INITDB_DATABASE=loggedData
-      - MONGO_INITDB_ROOT_USERNAME=ranDumUs8er99991
-      - MONGO_INITDB_ROOT_PASSWORD=randomPassWord99919
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
     volumes:
       - ./mongodbvolume:/data/db
     networks: 
