@@ -4,7 +4,7 @@
 4. git switch tudortmund
 5. mv .env.template .env
 6. vi .env and fill it out
-7. bash setup.sh (takes a good while)
+7. sudo bash setup.sh (takes a good while)
 8. Run docker compose ps, check if nginxproxymanager, db and jupyterhub are running.
 Sometimes db exits, just run docker compose up -d and it should work all fine.
 9. Wait a minute or two, then use SSH Tunnel to access nginxproxymanager.
@@ -54,4 +54,10 @@ To share course materials, host your materials on a public github server and cre
 * Application to Open: JupyterLab
 
 # How to prepare notebooks:
-https://github.com/KaiYakexi/jupy-cell-lock
+1. Create the Jupyter Notebook first – Do this before adding it to the Jupyter AIprompt system. Once added, you won’t be able to delete or add cells.
+2. Design your exercise – Add all your exercise content to the notebook.
+3. Set cell permissions (via Cell Metadata in Jupyter inspector):
+    * For all cells: "deletable": false
+    * For all question description cells (Markdown or code): set "editable": false. 
+    * For all solution cells: set "editable": true and give it an unique "identifier" for example: courseName_exerciseSheet_exerciseNumber_stepNumber
+4. Add completed Notebook to the system
