@@ -185,11 +185,12 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   NotebookActions.executed.connect((_, args) => {
     const { cell, success} = args;
-    if (window.sessionStorage.getItem('UseExtension')=='customPrompt'){
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
+        const supportModel=cellModel.getMetadata('support')
+        if (supportModel=='customPrompt'){
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
@@ -221,7 +222,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           console.log('Logging successful cell run');
         }
       }
-    }
+    } else {}
   } else {
       console.error('Cell is undefined or null.');
     }

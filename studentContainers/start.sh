@@ -27,11 +27,11 @@ unset_explicit_env_vars () {
 }
 #
 #
-# Adds .ipynb files on startup to work directory of user
+# Adds all files on a mounted directory on startup to the work directory of the user
 #
 #
 if [ -d "/tmp/source" ]; then
-    cp -n -r /tmp/source/*.ipynb "${HOME}/work/" 2>/dev/null || :
+    cp -n -r /tmp/source/* "${HOME}/work/" 2>/dev/null || :
     chown -R ${NB_UID}:${NB_GID} "${HOME}/work"
 fi
 

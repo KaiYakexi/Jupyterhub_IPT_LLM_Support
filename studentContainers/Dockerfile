@@ -8,11 +8,17 @@ COPY ./extensionManager/extension /extension/extensionManager
 
 USER root
 
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g yarn
 
 RUN pip install nbgitpuller
+RUN pip install pandas
+RUN pip install scikit-learn
+RUN pip install patsy
     
 RUN cd /extension/customPrompt && \
     pip install -ve . && \
@@ -45,14 +51,6 @@ RUN cd /extension/personalizedSupport && \
     jlpm run build && \
     cd .. && \
     rm -rf /extension/personalizedSupport
-
-RUN cd /extension/extensionManager && \
-    pip install -ve . && \
-    jlpm && \
-    jlpm install && \
-    jlpm run build && \
-    cd .. && \
-    rm -rf /extension/extensionManager
 
 RUN git clone https://github.com/KaiYakexi/jupy-cell-lock.git /jupy-cell-lock && \
     cd /jupy-cell-lock && \

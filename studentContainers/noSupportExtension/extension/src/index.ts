@@ -183,11 +183,12 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
 
   NotebookActions.executed.connect((_, args) => {
     const { cell, success } = args;
-    if (window.sessionStorage.getItem('UseExtension')=='noSupport'){
     if (cell) {
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
+        const supportModel=cellModel.getMetadata('support')
+        if (supportModel=='noSupport'){
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
         const execution_count=<Number>cellJson.execution_count;
@@ -214,7 +215,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
           logSuccess(execution_count,cellIdentifier,output,sourceCode);
         }
       }
-    }
+    } else {}
    } else {
     }
   }});
