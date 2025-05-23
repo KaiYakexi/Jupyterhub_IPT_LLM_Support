@@ -71,6 +71,18 @@ c.JupyterHub.services = [
         'environment': {
             'FLASK_ENV': 'production'
     }
+    },
+        {
+        "name": "jupyterhub-idle-culler-role",
+        "scopes": [
+            "list:users",
+            "read:users:activity",
+            "read:servers",
+            "delete:servers",
+            # "admin:users", # if using --cull-users
+        ],
+        # assignment of role's permissions to:
+        "services": ["jupyterhub-idle-culler-service"],
     }
 ]
 c.JupyterHub.load_roles = [

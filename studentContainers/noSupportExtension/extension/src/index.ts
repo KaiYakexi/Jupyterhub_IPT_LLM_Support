@@ -187,7 +187,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       const cellModel = cell.model;
       if (isCodeCellModel(cellModel)){
         const cellIdentifier=cellModel.getMetadata('identifier')
-        const supportModel=cellModel.getMetadata('support')
+        const supportModel=cellModel.getMetadata('supportModel')
         if (supportModel=='noSupport'){
         const cellJson = cell.model.toJSON();
         const sourceCode : String = String(cellJson.source);
@@ -231,7 +231,7 @@ function activateWidget(app: JupyterFrontEnd, palette: ICommandPalette, notebook
       headers: {
         'Authorization': `Bearer ${token}`, 
         'Content-Type': 'application/json' },
-      body: JSON.stringify({"requestData":requestData}),
+      body: JSON.stringify({requestData}),
   });
   if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

@@ -13,7 +13,7 @@ sed -i "s|\$MONGO_INITDB_ROOT_PASSWORD|$MONGO_INITDB_ROOT_PASSWORD|g" "docker-co
 sed -i "s|\$COURSE_NAME|$COURSE_NAME|g" "jupyterhub_config.py"
 sed -i "s|\$STUDENT_IMAGE_NAME|$STUDENT_IMAGE_NAME|g" "jupyterhub_config.py"
 sed -i "s|\$ADMIN_USERNAME|$ADMIN_USERNAME|g" "jupyterhub_config.py"
-
+sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "jupyterhub_config.py"
 
 sed -i "s|\$JUPYTERHUB_URL|$JUPYTERHUB_URL|g" "./studentContainers/extensionManager/extension/src/index.ts"
 sed -i "s|\$JUPYTERHUB_URL|$JUPYTERHUB_URL|g" "./studentContainers/noSupportExtension/extension/src/index.ts"
