@@ -25,8 +25,8 @@ def get_db():
     db = mongoClient['loggedData']
     return db
 
-#JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
-JUPYTERHUB_URL="$JUPYTERHUB_URL"
+JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
+#JUPYTERHUB_URL="$JUPYTERHUB_URL"
     
 prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 

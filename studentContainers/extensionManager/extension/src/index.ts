@@ -13,7 +13,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   async function getUserSupportGroup(): Promise<string> {
 
     let token = PageConfig.getToken();
-    const UserSupportGroupEndpoint = '$JUPYTERHUB_URL/jupyterhub/services/askLLM/userSupportGroup';
+    const UserSupportGroupEndpoint = 'http://localhost:8533/jupyterhub/services/askLLM/userSupportGroup';
 
     try{
       const response = await fetch(UserSupportGroupEndpoint, {
