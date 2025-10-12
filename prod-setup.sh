@@ -15,7 +15,7 @@ sed -i "s|\$MONGO_INITDB_ROOT_PASSWORD|$MONGO_INITDB_ROOT_PASSWORD|g" "docker-co
 
 sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "jupyterhub_config.py"
 
-sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "/studentContainers/addToContainer.sh"
+sed -i "s|\$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|$ABSOLUTE_PATH_TO_COURSE_DIRECTORY|g" "studentContainers/addToContainer.sh"
 
 docker compose -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.prod.yml up -d
