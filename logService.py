@@ -25,7 +25,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 #JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
 JUPYTERHUB_URL="$JUPYTERHUB_URL"
-
+client= OpenAI(api_key="$OPENAI_API_KEY")
 #
 #
 #
@@ -49,7 +49,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=3, x_proto=3,x_host=3,x_prefix=3 )
 app.secret_key = secrets.token_bytes(32)
 
-client= OpenAI(api_key="$OPENAI_API_KEY")
+
 
 def sendRequestToLLM(data):
     if data['supportType']=='noSupport':

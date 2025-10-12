@@ -3,7 +3,7 @@
 JupyterHub uses DockerSpawner to create a JupyterLab environment for users. To do this. A JupyterLab docker image is required. You can use this [repo](https://github.com/COLAPS-Research/aipromptextensionshttps://github.com/COLAPS-Research/aipromptextensions), which also contains our implemented AI support functions in form of JupyterLab extensions. THe AI support functions only trigger on compile or runtime-errors of cells with a speciic _supportModel_ metatag. These extensions communicate with our logging and llm service that this JupyterHub implementation manages. To create the JupyterLab image, follow these steps:
 1. Go into the studentContainers repository
 2. Clone the [git repository](https://github.com/COLAPS-Research/aipromptextensionshttps://github.com/COLAPS-Research/aipromptextensions) and move into it. 
-3. Replace the value of _setJupyterHubBaseUrl_ with the base url of JupyterHub (e.g. http://localhost:8533/jupyterhub for local deployment)
+3. Replace the value of _setJupyterHubBaseUrl_ with the base url of JupyterHub (e.g. http://localhost:8533/jupyterhub for local deployment) in **/extensionManager/src/index.ts**
 4. Create the docker image inside the directory of the git repository using:
 `docker build -t jupyterlab-students:latest --label "courseName=jupyterlab-students" . --no-cache`
 
@@ -25,9 +25,10 @@ _$ABSOLUTE_PATH_TO_COURSE_DIRECTORY_ with the absolute path to the directory con
 5. Build and run the containers
 Run the following commands from the project root:
 ```
-docker compose -f docker-compose..yml build --no-cache
+docker compose -f docker-compose.yml build --no-cache
 docker compose -f docker-compose.yml up -d
 ```
+6. Access your [JupyterHub](http://localhost:8533/jupyterhub) and register using the _admin_ username, then log in using the same username.
 
 # Production
 
