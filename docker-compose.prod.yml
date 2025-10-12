@@ -1,0 +1,49 @@
+services:
+  jupyterhub:
+    build: .
+    image: jupyterhub-custom
+    container_name: jupyterhub-container
+    depends_on:
+      - db
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./templates:/srv/jupyterhub/templates
+      - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
+      - jupyterhub_data:/srv/jupyterhub/data
+      - ./logService.py:/srv/jupyterhub/logService.py
+    expose:
+      - "8000"
+    networks:
+      - jupyterhub
+  db:
+    image: mongo:latest
+    hostname: mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=loggedData
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
+    volumes:
+      - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+      - ./mongodbvolume:/data/db
+    networks: 
+      - jupyterhub
+  nginx:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    networks:
+      - jupyterhub
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    environment:
+      DISABLE_IPV6: 'true'
+    volumes:
+      - ./nginxdata:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+volumes:
+  jupyterhub_data:
+networks:
+  jupyterhub:
+    name: jupyterhub

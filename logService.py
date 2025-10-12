@@ -16,6 +16,19 @@ import requests
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+#
+#
+#
+#
+# Uncomment the first JUPYTERHUB_URL declaration and comment out the second
+# for local deployment
+
+#JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
+JUPYTERHUB_URL="$JUPYTERHUB_URL"
+
+#
+#
+#
 def get_db():
     mongoClient= MongoClient(host='mongodb',
                          port=27017, 
@@ -24,9 +37,6 @@ def get_db():
                         authSource="admin")
     db = mongoClient['loggedData']
     return db
-
-JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
-#JUPYTERHUB_URL="$JUPYTERHUB_URL"
     
 prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 

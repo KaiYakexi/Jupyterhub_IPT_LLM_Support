@@ -13,8 +13,8 @@ c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 
 # Auth
-c.Authenticator.allowed_users = {'myadmin'}
-c.Authenticator.admin_users = {'myadmin'}
+c.Authenticator.allowed_users = {'admin'}
+c.Authenticator.admin_users = {'admin'}
 c.NativeAuthenticator.open_signup = True
 
 # Spawner
@@ -26,15 +26,16 @@ c.JupyterHub.spawner_class = DockerSpawner
 
 def pre_spawn_hook(spawner):
     group_names = [g.name for g in spawner.user.groups]
-    if 'courseone' in group_names:
-        spawner.volumes = {
+    # Not required if you only host one course
+    #if 'courseone' in group_names:
+    spawner.volumes = {
             'jupyterhub-user-{username}': '/home/jovyan/work',
-            'ADD_ABSOLUTE_PATH': '/tmp/source',  # ensure this exists on the host
-        }
-        spawner.notebook_dir = '/home/jovyan/work'
-        spawner.image = 'courseone:latest'
-    else:
-        spawner.image = 'jupyterlab-nocourse:latest'
+            '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY': '/tmp/source',  # ensure this exists on the host
+    }
+    spawner.notebook_dir = '/home/jovyan/work'
+    spawner.image = 'jupyterlab-students:latest'
+    #else:
+    #    spawner.image = 'jupyterlab-nocourse:latest'
 
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
