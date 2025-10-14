@@ -16,6 +16,19 @@ import requests
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+#
+#
+#
+#
+# Uncomment the first JUPYTERHUB_URL declaration and comment out the second
+# for local deployment
+
+#JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
+JUPYTERHUB_URL="$JUPYTERHUB_URL"
+client= OpenAI(api_key="$OPENAI_API_KEY")
+#
+#
+#
 def get_db():
     mongoClient= MongoClient(host='mongodb',
                          port=27017, 
@@ -24,9 +37,6 @@ def get_db():
                         authSource="admin")
     db = mongoClient['loggedData']
     return db
-
-#JUPYTERHUB_URL = 'http://host.docker.internal:8000/jupyterhub/hub'
-JUPYTERHUB_URL="$JUPYTERHUB_URL"
     
 prefix = os.environ.get('JUPYTERHUB_SERVICE_PREFIX', '/')
 
@@ -39,7 +49,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=3, x_proto=3,x_host=3,x_prefix=3 )
 app.secret_key = secrets.token_bytes(32)
 
-client= OpenAI(api_key="$OPENAI_API_KEY")
+
 
 def sendRequestToLLM(data):
     if data['supportType']=='noSupport':

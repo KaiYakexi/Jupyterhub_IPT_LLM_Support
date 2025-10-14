@@ -11,12 +11,10 @@ services:
       - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
       - jupyterhub_data:/srv/jupyterhub/data
       - ./logService.py:/srv/jupyterhub/logService.py
-    ports:
-      - "8533:8000"
+    expose:
+      - "8000"
     networks:
       - jupyterhub
-    extra_hosts:
-      - "host.docker.internal:127.17.0.1"
   db:
     image: mongo:latest
     hostname: mongodb
@@ -29,10 +27,23 @@ services:
       - ./mongodbvolume:/data/db
     networks: 
       - jupyterhub
+  nginx:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    networks:
+      - jupyterhub
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    environment:
+      DISABLE_IPV6: 'true'
+    volumes:
+      - ./nginxdata:/data
+      - ./letsencrypt:/etc/letsencrypt
 
 volumes:
   jupyterhub_data:
-
 networks:
   jupyterhub:
     name: jupyterhub
