@@ -63,8 +63,25 @@ def sendRequestToLLM(data):
     elif data['supportType']=='personalizedSupport':
         prompt = f"""
     How do I solve this {data['errorName']} in Python, this is my traceback: {data['traceback']}
-    and this is my source code: {data['sourceCode']}   
-"""
+    and this is my source code: {data['sourceCode']}"""
+    elif data['supportType']=="workedExample":
+        if data['hintCounter']==0:
+            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']==1:
+            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']==2:
+            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']>=3:
+            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
+    elif data['supportType']=="instructionalText":
+        if data['hintCounter']==0:
+            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']==1:
+            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']==2:
+            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
+        if data['hintCounter']>=3:
+            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
     completion = client.chat.completions.create(
   model="gpt-3.5-turbo",
   messages=[
@@ -207,7 +224,6 @@ def askLLM(user):
         LLMResponse=sendRequestToLLM(data)
         response={'LLMResponse':LLMResponse}
         sendTS=datetime.datetime.now().timestamp()
-        db= get_db()
         data['user']=user['name']
         data['receptionTS']=receptionTS
         data['sendTS']=sendTS

@@ -29,8 +29,8 @@ def pre_spawn_hook(spawner):
     # Not required if you only host one course
     #if 'courseone' in group_names:
     spawner.volumes = {
-            'jupyterhub-user-{username}': '/home/jovyan/work',
-            '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY': '/tmp/source',  # ensure this exists on the host
+            'jupyterhub-user-{username}': '/home/jovyan/work'    #,
+         #   '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY': '/tmp/source',  # ensure this exists on the host
     }
     spawner.notebook_dir = '/home/jovyan/work'
     spawner.image = 'jupyterlab-students:latest'
