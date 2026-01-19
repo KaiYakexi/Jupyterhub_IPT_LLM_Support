@@ -15,3 +15,6 @@ RUN pip install --no-cache \
 
     
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
+COPY logService.py /srv/jupyterhub/logService.py
+COPY prompt_loader.py /srv/jupyterhub/prompt_loader.py
+COPY prompts /srv/jupyterhub/prompts

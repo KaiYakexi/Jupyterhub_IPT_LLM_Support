@@ -7,7 +7,6 @@ c.JupyterHub.template_paths = ['/srv/jupyterhub/templates']
 
 # Core Hub
 c.JupyterHub.authenticator_class = NativeAuthenticator
-c.JupyterHub.base_url = '/jupyterhub'
 c.JupyterHub.log_level = 'DEBUG'
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"

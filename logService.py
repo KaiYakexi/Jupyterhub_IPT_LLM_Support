@@ -16,6 +16,14 @@ import requests
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+
+from prompt_loader import (
+    FINAL_SOLUTIONS,
+    INSTRUCTIONAL_PROMPTS,
+    WORKED_EXAMPLE_PROMPTS
+)
+
+
 #
 #
 #
@@ -32,8 +40,8 @@ client= OpenAI(api_key="$OPENAI_API_KEY")
 def get_db():
     mongoClient= MongoClient(host='mongodb',
                          port=27017, 
-                         username='$MONGO_INITDB_ROOT_USERNAME', 
-                         password='$MONGO_INITDB_ROOT_PASSWORD',
+                         username='T49494hExAs', 
+                         password='FO934jhsA1',
                         authSource="admin")
     db = mongoClient['loggedData']
     return db
@@ -51,45 +59,65 @@ app.secret_key = secrets.token_bytes(32)
 
 
 
-def sendRequestToLLM(data):
-    if data['supportType']=='noSupport':
-        return
-    elif data['supportType']=='customPrompt':
-        prompt=f"""{data['customPrompt']}+{data['sourceCode']}+{data['traceback']}"""
-    elif data['supportType']=='genericSupport':
-        prompt = f"""
-    How do I solve a {data['errorName']} error in Python?
-    """
-    elif data['supportType']=='personalizedSupport':
-        prompt = f"""
-    How do I solve this {data['errorName']} in Python, this is my traceback: {data['traceback']}
+
+def genericPrompt(data):
+    return f"How do I solve a {data['errorName']} error in Python?"
+
+def personalizedPrompt(data):
+    return f"""How do I solve this {data['errorName']} in Python,
+     this is my traceback: {data['traceback']} 
     and this is my source code: {data['sourceCode']}"""
-    elif data['supportType']=="workedExample":
-        if data['hintCounter']==0:
-            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']==1:
-            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']==2:
-            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']>=3:
-            prompt=f"""Give out this: This is worked Example with hintcounter {data['hintCounter']}"""
-    elif data['supportType']=="instructionalText":
-        if data['hintCounter']==0:
-            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']==1:
-            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']==2:
-            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
-        if data['hintCounter']>=3:
-            prompt=f"""Give out this: This is instructionalText with hintcounter {data['hintCounter']}"""
-    completion = client.chat.completions.create(
-  model="gpt-3.5-turbo",
-  messages=[
-    {"role": "system", "content": "You are a helpful programming assistent"},
-    {"role": "user","content":prompt}
-  ]
-)
-    return completion.choices[0].message.content
+
+def customPrompt(data):
+    return f"""{data['customPrompt']}+{data['sourceCode']}+{data['traceback']}"""
+
+# Max hints before giving out the solution (starting from 0)
+maxHints=3
+
+def instructionalTextPrompt(data):
+    hintCounter=data['hintCounter']
+    exerciseID=data["cellIdentifier"]
+    if int(hintCounter) < maxHints:
+        return INSTRUCTIONAL_PROMPTS[int(hintCounter)]
+    return FINAL_SOLUTIONS[exerciseID]["instructionalText"]
+
+def workedExamplePrompt(data):
+    hintCounter=data['hintCounter']
+    exerciseID=data["cellIdentifier"]
+    if int(hintCounter) < maxHints:
+        return WORKED_EXAMPLE_PROMPTS[int(hintCounter)]
+    return FINAL_SOLUTIONS[exerciseID]["workedExample"]
+
+
+
+promptHandlers = {
+    "genericSupport": genericPrompt,
+    "personalizedSupport": personalizedPrompt,
+    "customPrompt":customPrompt,
+    "instructionalText":instructionalTextPrompt,
+    "workedExample":workedExamplePrompt
+}
+
+
+
+def sendRequestToLLM(data):
+    supportType=data.get("supportType")
+    if supportType=='noSupport':
+        return None
+    
+    handler = promptHandlers.get(supportType)
+    if not handler:
+        raise ValueError(f"Unknown supportType {supportType}")
+    prompt=handler(data)
+
+    response = client.responses.create(
+    model="gpt-4.1",
+    input=[
+        {"role": "system", "content": "You are a helpful programming assistant"},
+        {"role": "user", "content": prompt}
+    ])
+
+    return response.output_text
 
 def authenticated(f):
     """Decorator for authenticating with the Hub via API token"""
@@ -178,22 +206,33 @@ def userSupportGroup(user):
 
 
 
-#@app.route(prefix+'testDB', methods=['GET'])
-#@oauthenticated
-#def testDB(user):
-#    try:
-#        db=get_db()
-#        _loggedData = db.loggedData_data.find()
-#        loggedData = json_util.dumps(list(_loggedData))
-#        response={'Data': loggedData}
-#        return Response(
-#            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-#        )
-#    except Exception as e:
-#        return Response(
-#            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
-#        )
+@app.route(prefix+'testDB', methods=['GET'])
+@oauthenticated
+def testDB(user):
+    try:
+        db=get_db()
+        _loggedData = db.loggedData_data.find()
+        loggedData = json_util.dumps(list(_loggedData))
+        response={'Data': loggedData}
+        return Response(
+            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
+        )
+    except Exception as e:
+        return Response(
+           json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
+        )
 
+@app.route(prefix+'testImport', methods=['GET'])
+@oauthenticated
+def testImport(user):
+    try:
+        return Response(
+            json.dumps(FINAL_SOLUTIONS, indent=1, sort_keys=True), mimetype='application/json'
+        )
+    except Exception as e:
+        return Response(
+           json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
+        )
 
         
 @app.route(prefix+'successLog', methods=['POST'])

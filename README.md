@@ -19,10 +19,7 @@ The created JupyterLab images contains a custom script (_start.sh_). If a Jupyte
 2. Replace _$OPENAI_API_KEY_ with your OpenAI API Key in **logService.py**
 3. Configure MongoDB Credentials
 In both **logService.py** and **docker-compose.yml**, replace  _$MONGO_INITDB_ROOT_USERNAME_ and _$MONGO_INITDB_ROOT_PASSWORD_  with your desired MongoDBD credentials
-4. Set the Course Directory Path
-In both **jupyuterhub_config.py** and **/studentContainers/addToContainer.sh**, replace:
-_$ABSOLUTE_PATH_TO_COURSE_DIRECTORY_ with the absolute path to the directory containing the exercises you want to share with students.
-5. Build and run the containers
+4. Build and run the containers
 Run the following commands from the project root:
 ```
 docker compose -f docker-compose.yml build --no-cache
@@ -73,17 +70,12 @@ proxy_set_header X-Forwarded_Proto $scheme;
 Choose certificate and Force SSL and click on saved once finished.
 ```
 
-## Jupyterhub Setup
-1. go to yourdomain.com/jupyterhub
-2. Click on sign up and sign up with the username "admin"
-4. After logging in, go to the admin page /jupyterhub/hub/admin -> Manage groups -> New Group and create these four groups: _customPrompt_, _noSupport_,_personalizedSupport_, _genericSupport_. Only assign each user to one of these groups.
-
-
 ## How to prepare the notebooks:
 1. Create the Jupyter Notebook first.
 2. Design your exercise – Add all your exercise content to the notebook.
 3. Set cell permissions (via Cell Metadata in Jupyter inspector):
     * For all cells: "deletable": false
     * For all question description cells (Markdown or code): set "editable": false. 
-    * For all solution cells: set "editable": true and give it an unique "identifier" for example: courseName_exerciseSheet_exerciseNumber_stepNumber
+    * For all solution cells: set "editable": true
+    * For every code cell that is meant to be executed by a user: give it an unique "cellIdentifier" for example courseName_exerciseSheet_exerciseNumber_stepNumber
 4. Add completed Notebook to the system
