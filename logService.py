@@ -94,7 +94,7 @@ def instructionalTextPrompt(data):
 def workedExamplePrompt(data):
     hintCounter=data['hintCounter']
     if int(hintCounter) < maxHints:
-        templateName="workedExample"+str(hintCounter)+"Template"
+        templateName="workedExampleHint"+str(hintCounter)+"Template"
         templateForPrompt= promptTemplates[templateName]
         return templateForPrompt.substitute(sourceCode=data['sourceCode'],traceback=data['traceback'],taskDescription=data['taskDescription'])
     return None
