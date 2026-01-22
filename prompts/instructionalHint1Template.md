@@ -1,8 +1,8 @@
 I tried to solve the following programming task in Python:
-{taskDescription}
+$taskDescription
 This is my current solution attempt:
-{sourceCode}
+$sourceCode
 When running the code, I get the following error:
-{traceback}
+$traceback
 Act like a teacher.
 Give me a personalized explanation that relates the error to my specific code and explains why this mistake commonly happens in such situations. But don’t use code. 

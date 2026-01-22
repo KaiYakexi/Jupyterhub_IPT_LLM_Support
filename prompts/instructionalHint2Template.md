@@ -1,9 +1,9 @@
 I tried to solve the following programming task in Python:
-{taskDescription}
+$taskDescription
 This is my current solution attempt:
-{sourceCode}
+$sourceCode
 When running the code, I get the following error:
-{traceback}
+$traceback
 Act like a teacher.
 Give me a step-by-step explanation of what happens when Python executes my code and why this leads to the given error. Don`t use code.
 Clearly identify the relevant lines or operations that cause the problem and explain what Python expects instead.
