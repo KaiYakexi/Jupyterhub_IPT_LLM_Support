@@ -22,8 +22,8 @@ services:
     hostname: mongodb
     environment:
       - MONGO_INITDB_DATABASE=loggedData
-      - MONGO_INITDB_ROOT_USERNAME=T49494hExAs
-      - MONGO_INITDB_ROOT_PASSWORD=FO934jhsA1
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
     volumes:
       - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
       - ./mongodbvolume:/data/db

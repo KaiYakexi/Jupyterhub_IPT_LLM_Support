@@ -15,16 +15,25 @@ import datetime
 import requests
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from string import Template
+from pathlib import Path
 
 
-from prompt_loader import (
-    FINAL_SOLUTIONS,
-    INSTRUCTIONAL_PROMPTS,
-    WORKED_EXAMPLE_PROMPTS
-)
 
 
-#
+
+from solutions import SOLUTIONS
+
+TEMPLATE_DIR=Path("prompts")
+promptTemplates= {}
+
+
+def load_prompt_templates():
+    for path in TEMPLATE_DIR.glob("*.md"):
+        with path.open(encoding="utf-8") as f:
+            promptTemplates[path.stem] = Template(f.read())
+            
+load_prompt_templates()
 #
 #
 #
@@ -40,8 +49,8 @@ client= OpenAI(api_key="$OPENAI_API_KEY")
 def get_db():
     mongoClient= MongoClient(host='mongodb',
                          port=27017, 
-                         username='T49494hExAs', 
-                         password='FO934jhsA1',
+                         username='$MONGO_INITDB_ROOT_USERNAME', 
+                         password='$MONGO_INITDB_ROOT_PASSWORD',
                         authSource="admin")
     db = mongoClient['loggedData']
     return db
@@ -76,17 +85,19 @@ maxHints=3
 
 def instructionalTextPrompt(data):
     hintCounter=data['hintCounter']
-    exerciseID=data["cellIdentifier"]
     if int(hintCounter) < maxHints:
-        return INSTRUCTIONAL_PROMPTS[int(hintCounter)]
-    return FINAL_SOLUTIONS[exerciseID]["instructionalText"]
+        templateName="instructionalHint"+str(hintCounter)+"Template"
+        templateForPrompt= promptTemplates[templateName]
+        return templateForPrompt.substitute(sourceCode=data['sourceCode'],traceback=data['traceback'],taskDescription=data['taskDescription'])
+    return None
 
 def workedExamplePrompt(data):
     hintCounter=data['hintCounter']
-    exerciseID=data["cellIdentifier"]
     if int(hintCounter) < maxHints:
-        return WORKED_EXAMPLE_PROMPTS[int(hintCounter)]
-    return FINAL_SOLUTIONS[exerciseID]["workedExample"]
+        templateName="workedExample"+str(hintCounter)+"Template"
+        templateForPrompt= promptTemplates[templateName]
+        return templateForPrompt.substitute(sourceCode=data['sourceCode'],traceback=data['traceback'],taskDescription=data['taskDescription'])
+    return None
 
 
 
@@ -103,13 +114,14 @@ promptHandlers = {
 def sendRequestToLLM(data):
     supportType=data.get("supportType")
     if supportType=='noSupport':
-        return None
+        return None,None
     
     handler = promptHandlers.get(supportType)
     if not handler:
         raise ValueError(f"Unknown supportType {supportType}")
     prompt=handler(data)
-
+    if prompt is None:
+        return 'Solution by teacher',SOLUTIONS[data["cellIdentifier"]]
     response = client.responses.create(
     model="gpt-4.1",
     input=[
@@ -117,7 +129,7 @@ def sendRequestToLLM(data):
         {"role": "user", "content": prompt}
     ])
 
-    return response.output_text
+    return prompt,response.output_text
 
 def authenticated(f):
     """Decorator for authenticating with the Hub via API token"""
@@ -222,18 +234,6 @@ def testDB(user):
            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
         )
 
-@app.route(prefix+'testImport', methods=['GET'])
-@oauthenticated
-def testImport(user):
-    try:
-        return Response(
-            json.dumps(FINAL_SOLUTIONS, indent=1, sort_keys=True), mimetype='application/json'
-        )
-    except Exception as e:
-        return Response(
-           json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
-        )
-
         
 @app.route(prefix+'successLog', methods=['POST'])
 @authenticated
@@ -260,7 +260,8 @@ def askLLM(user):
             return Response(
                 json.dumps({'error': 'No payload received'},status=400)
             )
-        LLMResponse=sendRequestToLLM(data)
+        promptUsed,LLMResponse=sendRequestToLLM(data)
+        data['promptUsed']=promptUsed
         response={'LLMResponse':LLMResponse}
         sendTS=datetime.datetime.now().timestamp()
         data['user']=user['name']

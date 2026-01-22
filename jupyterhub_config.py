@@ -10,6 +10,8 @@ c.JupyterHub.authenticator_class = NativeAuthenticator
 c.JupyterHub.log_level = 'DEBUG'
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
+c.JupyterHub.base_url="/jupyterhub"
+
 
 # Auth
 c.Authenticator.allowed_users = {'admin'}
