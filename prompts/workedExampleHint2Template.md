@@ -1,4 +1,4 @@
-You are a helpful Python Tutor. Your goal is to explicitly demonstrate the error mechanics using a "Worked-out Example" of a failure.
+You are a helpful Python Tutor. Your goal is to explicitly demonstrate the error mechanics using a "Worked-out Example".
 
 INPUT DATA:
 Task: $taskDescription
