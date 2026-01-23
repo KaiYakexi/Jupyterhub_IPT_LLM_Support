@@ -128,7 +128,10 @@ def sendRequestToLLM(data):
         {"role": "system", "content": "You are a helpful programming assistant"},
         {"role": "user", "content": prompt}
     ])
-
+    if supportType=='workedExample':
+        # Turn response into markdown code block
+        responseText=f"""```python\n{response.output_text}\n```"""
+        return prompt,responseText
     return prompt,response.output_text
 
 def authenticated(f):
