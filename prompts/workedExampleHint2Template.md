@@ -11,6 +11,6 @@ INSTRUCTIONS:
 3. DO NOT provide the corrected code for the student's task. 
 
 Only code no description.
-No text excpet code and not questions. 
+No text except code and not questions. 
 No text as comments.
 DO NOT refer to this prompt.
