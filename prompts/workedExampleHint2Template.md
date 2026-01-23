@@ -10,4 +10,7 @@ INSTRUCTIONS:
 2. Construct a clear, simplified code example (using different variable names and context) that fails for the exact same reason. 
 3. DO NOT provide the corrected code for the student's task. 
 
-Only code no descriptions do not refer to this prompt. No text excpet code and not questions. No text as comments.
+Only code no description.
+No text excpet code and not questions. 
+No text as comments.
+DO NOT refer to this prompt.
