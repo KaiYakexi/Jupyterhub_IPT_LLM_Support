@@ -1,6 +1,6 @@
 # automatisch aus solutions.xlsx generiert
 SOLUTIONS = {
-    'g1_task1_w2': """
+    'g1_task1_w2': """```python
 def clean_reading_list(reading_list):
     cleaned = {}
     
@@ -12,8 +12,8 @@ def clean_reading_list(reading_list):
         cleaned[user] = valid_books
 
     return cleaned
-    """,
-    'g1_task2_w2': """
+    ```""",
+    'g1_task2_w2': """```python
 def report(reading_list):
     total_readers = len(reading_list)
 
@@ -40,8 +40,8 @@ def report(reading_list):
     print(f"Most popular book: {most_popular_book}")
 
 report(reading_list)
-""",
-    'g1_task3_w2': """
+```""",
+    'g1_task3_w2': """```python
 def average_rating(reading_list, book_name):
     total = 0
     count = 0
@@ -62,8 +62,8 @@ avgRating1984 = average_rating(reading_list, "1984")
 
 print("Average rating Hobbit:", avgRatingHobbit)
 print("Average rating 1984:", avgRating1984)
-""",
-    'g1_task4_w2': """
+```""",
+    'g1_task4_w2': """```python
 def print_book_overview(reading_list):
     book_totals = {}  
     book_counts = {}  
@@ -85,8 +85,8 @@ def print_book_overview(reading_list):
         avg = book_totals[book] / book_counts[book]
         count = book_counts[book]
         print(f"{book:<10} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g1_task5_w2': """
+```""",
+    'g1_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Must Read"
@@ -94,8 +94,8 @@ def rating_category(avg):
         return "Recommended"
     else:
         return "Skip"
-""",
-    'g1_task6_w2': """
+```""",
+    'g1_task6_w2': """```python
 def print_overview(reading_list):
     reading_list = clean_reading_list(reading_list)
     all_books = set()
@@ -114,7 +114,7 @@ def print_overview(reading_list):
                     count += 1
 
         print(f"{book:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
-""",
+```""",
     'g2_task1_w2': """
 def clean_evaluations(course_evals):
     cleaned = {}
