@@ -8,6 +8,9 @@ Traceback: $traceback
 INSTRUCTIONS:
 1. Identify the specific error in the student's code.
 2. Create a separate, unrelated Python code snippet that contains the same error logic. 
-3. DO NOT write code that solves the student's actual task. Keep the example abstract/unrelated. Only code no descriptions do not refer to this prompt.
-No text except code and not questions. No text as comments.
-Only code no descriptions do not refer to this prompt
+3. DO NOT write code that solves the student's actual task. Keep the example abstract/unrelated. 
+
+Only code no descriptions.
+No text except code and not questions. 
+No text as comments.
+DO NOT refer to this prompt.
