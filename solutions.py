@@ -12,7 +12,7 @@ def clean_reading_list(reading_list):
         cleaned[user] = valid_books
 
     return cleaned
-    ```""",
+```""",
     'g1_task2_w2': """```python
 def report(reading_list):
     total_readers = len(reading_list)
@@ -115,7 +115,7 @@ def print_overview(reading_list):
 
         print(f"{book:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
 ```""",
-    'g2_task1_w2': """
+    'g2_task1_w2': """```python
 def clean_evaluations(course_evals):
     cleaned = {}
 
@@ -127,8 +127,8 @@ def clean_evaluations(course_evals):
         cleaned[student] = valid_course
 
     return cleaned
-""",
-    'g2_task2_w2': """
+```""",
+    'g2_task2_w2': """```python
 def report(course_evals):
     total_students = len(course_evals)
 
@@ -155,8 +155,8 @@ def report(course_evals):
     print(f"Most popular course: {most_popular_course}")
 
 report(course_evals)
-""",
-    'g2_task3_w2': """
+```""",
+    'g2_task3_w2': """```python
 def average_rating(course_evals, course_name):
     total = 0
     count = 0
@@ -177,8 +177,8 @@ avgRatingDataScience = average_rating(course_evals, "Data Science")
 
 print("Average rating Calculus:", avgRatingCalculus)
 print("Average rating Data Science:", avgRatingDataScience)
-""",
-    'g2_task4_w2': """
+```""",
+    'g2_task4_w2': """```python
 def print_course_overview(course_evals):
     course_totals = {}  
     course_counts = {}  
@@ -200,8 +200,8 @@ def print_course_overview(course_evals):
         avg = course_totals[course] / course_counts[course]
         count = course_counts[course]
         print(f"{course:<10} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g2_task5_w2': """
+```""",
+    'g2_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Outstanding"
@@ -209,8 +209,8 @@ def rating_category(avg):
         return "Good"
     else:
         return "Needs Improvement"
-""",
-    'g2_task6_w2': """
+```""",
+    'g2_task6_w2': """```python
 def print_overview(course_evals):
     course_evals = clean_evaluations(course_evals)
     all_courses = set()
@@ -229,8 +229,8 @@ def print_overview(course_evals):
                     count += 1
 
         print(f"{course:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
-""",
-    'g3_task1_w2': """
+```""",
+    'g3_task1_w2': """```python
 def clean_reviews(cafe_reviews):
     cleaned = {}
 
@@ -242,8 +242,8 @@ def clean_reviews(cafe_reviews):
         cleaned[customer] = valid_cafes
 
     return cleaned
-""",
-    'g3_task2_w2': """
+```""",
+    'g3_task2_w2': """```python
 def report(cafe_reviews):
     total_customers = len(cafe_reviews)
 
@@ -270,8 +270,8 @@ def report(cafe_reviews):
     print(f"Most popular movie: {most_popular_cafe}")
 
 report(cafe_reviews)
-""",
-    'g3_task3_w2': """
+```""",
+    'g3_task3_w2': """```python
 def average_rating(cafe_reviews, cafe_name):
     total = 0
     count = 0
@@ -293,8 +293,8 @@ avgRatingJavaHouse = average_rating(cafe_reviews, "Java House")
 
 print("Average rating Cafe Noir:", avgRatingCafeNoir)
 print("Average rating Java House:", avgRatingJavaHouse)
-""",
-    'g3_task4_w2': """
+```""",
+    'g3_task4_w2': """```python
 def print_cafe_overview(cafe_reviews):
     cafe_totals = {}  
     cafe_counts = {}  
@@ -316,8 +316,8 @@ def print_cafe_overview(cafe_reviews):
         avg = cafe_totals[cafe] / cafe_counts[cafe]
         count = cafe_counts[cafe]
         print(f"{cafe:<10} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g3_task5_w2': """
+```""",
+    'g3_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Outstanding"
@@ -325,8 +325,8 @@ def rating_category(avg):
         return "Solid Choice"
     else:
         return "Avoid"
-""",
-    'g3_task6_w2': """
+```""",
+    'g3_task6_w2': """```python
 def print_overview(cafe_reviews):
     cafe_reviews = clean_reviews(cafe_reviews)
     all_cafes = set()
@@ -345,8 +345,8 @@ def print_overview(cafe_reviews):
                     count += 1
 
         print(f"{cafe:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
-""",
-    'g4_task1_w2': """
+```""",
+    'g4_task1_w2': """```python
 def clean_reviews(course_reviews):
     cleaned = {}
 
@@ -358,8 +358,8 @@ def clean_reviews(course_reviews):
         cleaned[member] = valid_courses
 
     return cleaned
-""",
-    'g4_task2_w2': """
+```""",
+    'g4_task2_w2': """```python
 def report(course_reviews):
     total_members = len(course_reviews)
 
@@ -387,8 +387,8 @@ def report(course_reviews):
 
 
 report(course_reviews)
-""",
-    'g4_task3_w2': """
+```""",
+    'g4_task3_w2': """```python
 def average_rating(course_reviews, course_name):
     total = 0
     count = 0
@@ -410,8 +410,8 @@ avgRatingYogaFlow = average_rating(course_reviews, "Yoga Flow")
 
 print("Average rating Pilates:", avgRatingPilates)
 print("Average rating Yoga Flow:", avgRatingYogaFlow)
-""",
-    'g4_task4_w2': """
+```""",
+    'g4_task4_w2': """```python
 def print_course_overview(course_reviews):
     course_totals = {}  
     course_counts = {}  
@@ -433,8 +433,8 @@ def print_course_overview(course_reviews):
         avg = course_totals[course] / course_counts[course]
         count = course_counts[course]
         print(f"{course:<10} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g4_task5_w2': """
+```""",
+    'g4_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Top Rated"
@@ -442,8 +442,8 @@ def rating_category(avg):
         return "Popular"
     else:
         return "Unpopular"
-""",
-    'g4_task6_w2': """
+```""",
+    'g4_task6_w2': """```python
 def print_overview(course_reviews):
     course_reviews = clean_reviews(course_reviews)
     all_courses = set()
@@ -462,8 +462,8 @@ def print_overview(course_reviews):
                     count += 1
 
         print(f"{course:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
-""",
-    'g5_task1_w2': """
+```""",
+    'g5_task1_w2': """```python
 def clean_ratings(album_ratings):
     cleaned = {}
 
@@ -475,8 +475,8 @@ def clean_ratings(album_ratings):
         cleaned[listener] = valid_albums
 
     return cleaned
-""",
-    'g5_task2_w2': """
+```""",
+    'g5_task2_w2': """```python
 def report(album_ratings):
     total_listeners = len(album_ratings)
 
@@ -504,8 +504,8 @@ def report(album_ratings):
 
 
 report(album_ratings)
-""",
-    'g5_task3_w2': """
+```""",
+    'g5_task3_w2': """```python
 def average_rating(album_ratings, album_name):
     total = 0
     count = 0
@@ -527,8 +527,8 @@ avgRatingAbbeyRoad = average_rating(album_ratings, "Abbey Road")
 
 print("Average rating Rumours:", avgRatingRumours)
 print("Average rating Abbey Road:", avgRatingAbbeyRoad)
-""",
-    'g5_task4_w2': """
+```""",
+    'g5_task4_w2': """```python
 def print_album_overview(album_ratings):
     album_totals = {}  
     album_counts = {}  
@@ -550,8 +550,8 @@ def print_album_overview(album_ratings):
         avg = album_totals[album] / album_counts[album]
         count = album_counts[album]
         print(f"{album:<10} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g5_task5_w2': """
+```""",
+    'g5_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Classic"
@@ -559,8 +559,8 @@ def rating_category(avg):
         return "Great"
     else:
         return "Mediocre"
-""",
-    'g5_task6_w2': """
+```""",
+    'g5_task6_w2': """```python
 def print_overview(album_ratings):
     album_ratings = clean_ratings(album_ratings)
     all_albums = set()
@@ -579,8 +579,8 @@ def print_overview(album_ratings):
                     count += 1
 
         print(f"{album:<10} | Avg: {avg:.2f} | Ratings: {count} | {category:<9} |")
-""",
-    'g6_task1_w2': """
+```""",
+    'g6_task1_w2': """```python
 def clean_ratings(podcast_ratings):
     cleaned = {}
 
@@ -599,8 +599,8 @@ def clean_ratings(podcast_ratings):
         cleaned[listener] = valid_podcasts
 
     return cleaned
-""",
-    'g6_task2_w2': """
+```""",
+    'g6_task2_w2': """```python
 def report(podcast_ratings):
     total_listeners = len(podcast_ratings)
 
@@ -627,8 +627,8 @@ def report(podcast_ratings):
     print(f"Most popular podcast: {most_popular_podcast}")
 
 report(podcast_ratings)
-""",
-    'g6_task3_w2': """
+```""",
+    'g6_task3_w2': """```python
 def average_rating(podcast_ratings, podcast_name):
     total = 0
     count = 0
@@ -649,8 +649,8 @@ avgRatingTechTalk = average_rating(podcast_ratings, "Tech Talk")
 
 print(f"Average rating History Hour: {avgRatingHistoryHour:.1f}")
 print(f"Average rating Tech Talk: {avgRatingTechTalk:.1f}")
-""",
-    'g6_task4_w2': """
+```""",
+    'g6_task4_w2': """```python
 def print_podcast_overview(podcast_ratings):
     podcast_totals = {} 
     podcast_counts = {}  
@@ -672,8 +672,8 @@ def print_podcast_overview(podcast_ratings):
         print(f"{podcast:<12} | Avg: {avg:.1f} | Ratings: {count}")
 
 print_podcast_overview(podcast_ratings)
-""",
-    'g6_task5_w2': """
+```""",
+    'g6_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Must Listen"
@@ -681,8 +681,8 @@ def rating_category(avg):
         return "Worth It"
     else:
         return "Skip"
-""",
-    'g6_task6_w2': """
+```""",
+    'g6_task6_w2': """```python
 def print_overview(podcast_ratings):
     podcast_totals = {}
     podcast_counts = {}
@@ -705,8 +705,8 @@ def print_overview(podcast_ratings):
         print(f"{podcast:<12} | Avg: {avg:.2f} | Ratings: {count} | {category:<11} |")
 
 print_overview(podcast_ratings)
-""",
-    'g7_task1_w2': """
+```""",
+    'g7_task1_w2': """```python
 def clean_reviews(reviews):
     cleaned = {}
 
@@ -724,8 +724,8 @@ def clean_reviews(reviews):
         cleaned[person] = valid_reviews
 
     return cleaned
-""",
-    'g7_task2_w2': """
+```""",
+    'g7_task2_w2': """```python
 def report(reviews):
     total_reviewers = len(reviews)
 
@@ -753,8 +753,8 @@ def report(reviews):
 
 
 report(reviews)
-""",
-    'g7_task3_w2': """
+```""",
+    'g7_task3_w2': """```python
 def average_rating(reviews, restaurant_name):
     total = 0
     count = 0
@@ -775,8 +775,8 @@ avgRatingPizzaPalace = average_rating(reviews, "Pizza Palace")
 
 print(f"Average rating Burger King: {avgRatingBurgerKing:.1f}")
 print(f"Average rating Pizza Palace: {avgRatingPizzaPalace:.1f}")
-""",
-    'g7_task4_w2': """
+```""",
+    'g7_task4_w2': """```python
 def print_restaurant_overview(reviews):
     restaurant_totals = {}  
     restaurant_counts = {} 
@@ -799,8 +799,8 @@ def print_restaurant_overview(reviews):
         
 
 print_restaurant_overview(reviews)
-""",
-    'g7_task5_w2': """
+```""",
+    'g7_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Outstanding"
@@ -808,8 +808,8 @@ def rating_category(avg):
         return "Solid Choice"
     else:
         return "Avoid"
-""",
-    'g7_task6_w2': """
+```""",
+    'g7_task6_w2': """```python
 def print_overview(reviews):
     restaurant_totals = {}
     restaurant_counts = {}
@@ -832,8 +832,8 @@ def print_overview(reviews):
         print(f"{restaurant:<12} | Avg: {avg:.2f} | Ratings: {count} | {category} |")
 
 print_overview(reviews)
-""",
-    'g8_task1_w2': """
+```""",
+    'g8_task1_w2': """```python
 def clean_reviews(destination_reviews):
     cleaned = {}
 
@@ -855,8 +855,8 @@ def clean_reviews(destination_reviews):
 
 #Testcase
 print(clean_reviews(destination_reviews))
-""",
-    'g8_task2_w2': """
+```""",
+    'g8_task2_w2': """```python
 def report(destination_reviews):
     total_travelers = len(destination_reviews)
 
@@ -885,8 +885,8 @@ def report(destination_reviews):
 
 
 report(destination_reviews)
-""",
-    'g8_task3_w2': """
+```""",
+    'g8_task3_w2': """```python
 def average_rating(destination_reviews, destination_name):
     total = 0
     count = 0
@@ -908,8 +908,8 @@ avgRatingParis = average_rating(destination_reviews, "Paris")
 
 print(f"Average rating London: {avgRatingLondon:.1f}")
 print(f"Average rating Paris: {avgRatingParis:.1f}")
-""",
-    'g8_task4_w2': """
+```""",
+    'g8_task4_w2': """```python
 def print_destination_overview(destination_reviews):
     destination_totals = {}  
     destination_counts = {}  
@@ -931,8 +931,8 @@ def print_destination_overview(destination_reviews):
         print(f"{destination:<12} | Avg: {avg:.1f} | Ratings: {count}")
 
 print_destination_overview(destination_reviews)
-""",
-    'g8_task5_w2': """
+```""",
+    'g8_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Must Visit"
@@ -940,8 +940,8 @@ def rating_category(avg):
         return "Recommended"
     else:
         return "Not Recommended"
-""",
-    'g8_task6_w2': """
+```""",
+    'g8_task6_w2': """```python
 def print_overview(destination_reviews):
     destination_totals = {}
     destination_counts = {}
@@ -964,8 +964,8 @@ def print_overview(destination_reviews):
         print(f"{destination:<12} | Avg: {avg:.2f} | Ratings: {count} | {category} |")
 
 print_overview(destination_reviews)
-""",
-    'g9_task1_w2': """
+```""",
+    'g9_task1_w2': """```python
 def clean_scores(game_scores):
     cleaned = {}
 
@@ -987,8 +987,8 @@ def clean_scores(game_scores):
 
 #Testcase
 print(clean_scores(game_scores))
-""",
-    'g9_task2_w2': """
+```""",
+    'g9_task2_w2': """```python
 def report(game_scores):
     total_players = len(game_scores)
 
@@ -1014,8 +1014,8 @@ def report(game_scores):
     print(f"Most popular game: {most_popular_game}")
 
 report(game_scores)
-""",
-    'g9_task3_w2': """
+```""",
+    'g9_task3_w2': """```python
 def average_score(game_scores, game_name):
     total = 0
     count = 0
@@ -1037,8 +1037,8 @@ avgRatingZelda = average_score(game_scores, "Zelda")
 
 print(f"Average rating Sonic: {avgRatingSonic:.1f}")
 print(f"Average rating Zelda: {avgRatingZelda:.1f}")
-""",
-    'g9_task4_w2': """
+```""",
+    'g9_task4_w2': """```python
 def print_game_overview(game_scores):
     game_totals = {}  
     game_counts = {}  
@@ -1057,8 +1057,8 @@ def print_game_overview(game_scores):
         avg = game_totals[game] / game_counts[game]
         count = game_counts[game]
         print(f"{game:<12} | Avg: {avg:.1f} | Ratings: {count}")
-""",
-    'g9_task5_w2': """
+```""",
+    'g9_task5_w2': """```python
 def rating_category(avg):
     if avg >= 4.5:
         return "Masterpiece"
@@ -1070,8 +1070,8 @@ def rating_category(avg):
 #Testcase
 avg = 0
 print(rating_category(avg))
-""",
-    'g9_task6_w2': """
+```""",
+    'g9_task6_w2': """```python
 def print_overview(game_scores):
     game_totals = {}
     game_counts = {}
@@ -1094,8 +1094,8 @@ def print_overview(game_scores):
         print(f"{game:<12} | Avg: {avg:.2f} | Ratings: {count} | {category} |")
 
 print_overview(game_scores)
-""",
-    'g1_task1_w3': """
+```""",
+    'g1_task1_w3': """```python
 def extract_ids(raw_ids):
     cleaned_codes = []
 
@@ -1117,8 +1117,8 @@ def extract_ids(raw_ids):
             cleaned_codes.append(cleaned.upper())
 
     return cleaned_codes
-""",
-    'g1_task2_w3': """
+```""",
+    'g1_task2_w3': """```python
 def create_verification_digit(student_id):
     first_8 = student_id[:8]
     
@@ -1131,8 +1131,8 @@ def create_verification_digit(student_id):
     verification_digit = total % 10
     
     return verification_digi
-""",
-    'g1_task3_w3': """
+```""",
+    'g1_task3_w3': """```python
 def correct_verification_digits(raw_ids):
     cleaned_ids = extract_ids(raw_ids)
     corrected_ids = []
@@ -1153,8 +1153,8 @@ def correct_verification_digits(raw_ids):
             print(f"{code} → Verification digit already correct")
     
     return corrected_ids
-""",
-    'g1_task4_w3': """
+```""",
+    'g1_task4_w3': """```python
 def verification_report(raw_ids):
     cleaned_ids = extract_ids(raw_ids)
 
@@ -1178,8 +1178,8 @@ def verification_report(raw_ids):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 verification_report(raw_ids)
-""",
-    'g1_task5_w3': """
+```""",
+    'g1_task5_w3': """```python
 def format_id(student_id):
     part1 = student_id[:2]       
     part2 = student_id[2:6]      
@@ -1187,8 +1187,8 @@ def format_id(student_id):
     
     formatted = f"{part1}-{part2}-{part3}"
     return formatted
-""",
-    'g1_task6_w3': """
+```""",
+    'g1_task6_w3': """```python
 def add_department(raw_ids):
     cleaned_ids = extract_ids(raw_ids)
     categorized_ids = []
@@ -1208,8 +1208,8 @@ def add_department(raw_ids):
         categorized_ids.append((student_id, department))
 
     return categorized_ids
-""",
-    'g2_task1_w3': """
+```""",
+    'g2_task1_w3': """```python
 def extract_skus(raw_skus):
     cleaned_skus = []
 
@@ -1231,8 +1231,8 @@ def extract_skus(raw_skus):
             cleaned_skus.append(cleaned.upper())
 
     return cleaned_skus
-""",
-    'g2_task2_w3': """
+```""",
+    'g2_task2_w3': """```python
 def calculate_check_digit(sku_code):
     first_9 = sku_code[:9]
     
@@ -1245,8 +1245,8 @@ def calculate_check_digit(sku_code):
     check_digit = total % 10
     
     return check_digit
-""",
-    'g2_task3_w3': """
+```""",
+    'g2_task3_w3': """```python
 def correct_check_digits(raw_skus):
     cleaned_skus = extract_skus(raw_skus)
     corrected_skus = []
@@ -1267,8 +1267,8 @@ def correct_check_digits(raw_skus):
             print(f"{code} → Check digit already correct")
     
     return corrected_skus
-""",
-    'g2_task4_w3': """
+```""",
+    'g2_task4_w3': """```python
 def sku_report(raw_skus):
     cleaned_skus = extract_skus(raw_skus)
 
@@ -1292,8 +1292,8 @@ def sku_report(raw_skus):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 sku_report(raw_skus)
-""",
-    'g2_task5_w3': """
+```""",
+    'g2_task5_w3': """```python
 def format_sku(sku):
     part1 = sku[:2]       
     part2 = sku[2:6]     
@@ -1302,8 +1302,8 @@ def format_sku(sku):
 
     formatted = f"{part1}-{part2}-{part3}{check_char}"
     return formatted
-""",
-    'g2_task6_w3': """
+```""",
+    'g2_task6_w3': """```python
 def add_category(raw_skus):
     cleaned_skus = extract_skus(raw_skus)
     categorized_skus = []
@@ -1325,8 +1325,8 @@ def add_category(raw_skus):
     return categorized_skus
     
 add_category(raw_skus)
-""",
-    'g3_task1_w3': """
+```""",
+    'g3_task1_w3': """```python
 def extract_card_numbers(raw_cards):
     cleaned_cards = []
 
@@ -1348,8 +1348,8 @@ def extract_card_numbers(raw_cards):
             cleaned_cards.append(cleaned.upper())
 
     return cleaned_cards
-""",
-    'g3_task2_w3': """
+```""",
+    'g3_task2_w3': """```python
 def calculate_luhn(card_number):
     first_15 = card_number[:15]
     
@@ -1362,8 +1362,8 @@ def calculate_luhn(card_number):
     luhn_digit = total % 10
     
     return luhn_digit
-""",
-    'g3_task3_w3': """
+```""",
+    'g3_task3_w3': """```python
 def correct_luhn_digits(raw_cards):
     cleaned_cards = extract_card_numbers(raw_cards)
     corrected_cards = []
@@ -1384,8 +1384,8 @@ def correct_luhn_digits(raw_cards):
             print(f"{code} → Luhn check digit already correct")
     
     return corrected_cards
-""",
-    'g3_task4_w3': """
+```""",
+    'g3_task4_w3': """```python
 def card_report(raw_cards):
     cleaned_cards = extract_card_numbers(raw_cards)
 
@@ -1409,8 +1409,8 @@ def card_report(raw_cards):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 card_report(raw_cards)
-""",
-    'g3_task5_w3': """
+```""",
+    'g3_task5_w3': """```python
 def format_card(card_number):
     part1 = card_number[:4]       
     part2 = card_number[4:8]      
@@ -1420,8 +1420,8 @@ def format_card(card_number):
 
     formatted = f"{part1}-{part2}-{part3}-{part4}{check_char}"
     return formatted
-""",
-    'g3_task6_w3': """
+```""",
+    'g3_task6_w3': """```python
 def add_card_type(raw_cards):
     cleaned_cards = extract_card_numbers(raw_cards)
     categorized_cards = []
@@ -1445,8 +1445,8 @@ def add_card_type(raw_cards):
     return categorized_cards
 
 add_card_type(raw_cards)
-""",
-    'g4_task1_w3': """
+```""",
+    'g4_task1_w3': """```python
 def extract_plates(raw_plates):
     cleaned_ids = []
 
@@ -1468,8 +1468,8 @@ def extract_plates(raw_plates):
             cleaned_ids.append(cleaned.upper())
 
     return cleaned_ids
-""",
-    'g4_task2_w3': """
+```""",
+    'g4_task2_w3': """```python
 def calculate_control_char(plate):
     first_6 = plate[:6]
     
@@ -1482,8 +1482,8 @@ def calculate_control_char(plate):
     control_char = total % 10
     
     return control_char
-""",
-    'g4_task3_w3': """
+```""",
+    'g4_task3_w3': """```python
 def correct_control_chars(raw_plates):
     cleaned_plates = extract_plates(raw_plates)
     corrected_plates = []
@@ -1504,8 +1504,8 @@ def correct_control_chars(raw_plates):
             print(f"{code} → Control character already correct")
     
     return corrected_plates
-""",
-    'g4_task4_w3': """
+```""",
+    'g4_task4_w3': """```python
 def plate_report(raw_plates):
     cleaned_plates = extract_plates(raw_plates)
 
@@ -1529,8 +1529,8 @@ def plate_report(raw_plates):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 plate_report(raw_plates)
-""",
-    'g4_task5_w3': """
+```""",
+    'g4_task5_w3': """```python
 def format_plate(plate):
     # Write your code here
     #return
@@ -1541,8 +1541,8 @@ def format_plate(plate):
 
     formatted = f"{part1}-{part2}-{part3}{check_char}"
     return formatted
-""",
-    'g4_task6_w3': """
+```""",
+    'g4_task6_w3': """```python
 def add_vehicle_type(raw_plates):
     cleaned_plates = extract_plates(raw_plates)
     categorized_plates = []
@@ -1564,8 +1564,8 @@ def add_vehicle_type(raw_plates):
     return categorized_plates
 
 add_vehicle_type(raw_plates)
-""",
-    'g5_task1_w3': """
+```""",
+    'g5_task1_w3': """```python
 def extract_bookings(raw_bookings):
     cleaned_bookings = []
 
@@ -1587,8 +1587,8 @@ def extract_bookings(raw_bookings):
             cleaned_bookings.append(cleaned.upper())
 
     return cleaned_bookings
-""",
-    'g5_task2_w3': """
+```""",
+    'g5_task2_w3': """```python
 def calculate_parity(booking_code):
     first_5 = booking_code[:5]
     
@@ -1601,8 +1601,8 @@ def calculate_parity(booking_code):
     parity_digit = total % 10
     
     return parity_digit
-""",
-    'g5_task3_w3': """
+```""",
+    'g5_task3_w3': """```python
 def correct_parity_digits(raw_bookings):
     cleaned_bookings = extract_bookings(raw_bookings)
     corrected_bookings = []
@@ -1623,8 +1623,8 @@ def correct_parity_digits(raw_bookings):
             print(f"{code} → Parity digit already correct")
     
     return corrected_bookings
-""",
-    'g5_task4_w3': """
+```""",
+    'g5_task4_w3': """```python
 def booking_report(raw_bookings):
     cleaned_bookings = extract_bookings(raw_bookings)
 
@@ -1648,8 +1648,8 @@ def booking_report(raw_bookings):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 booking_report(raw_bookings)
-""",
-    'g5_task5_w3': """
+```""",
+    'g5_task5_w3': """```python
 def format_booking(booking_code):
     part1 = booking_code[:2]       
     part2 = booking_code[2:-1]     
@@ -1657,8 +1657,8 @@ def format_booking(booking_code):
 
     formatted = f"{part1}-{part2}-{check_char}"
     return formatted
-""",
-    'g5_task6_w3': """
+```""",
+    'g5_task6_w3': """```python
 def add_flight_class(raw_bookings):
     cleaned_bookings = extract_bookings(raw_bookings)
     categorized_bookings = []
@@ -1680,8 +1680,8 @@ def add_flight_class(raw_bookings):
     return categorized_bookings
 
 add_flight_class(raw_bookings)
-""",
-    'g6_task1_w3': """
+```""",
+    'g6_task1_w3': """```python
 def extract_tracking(raw_tracking):
     cleaned_tracking = []
 
@@ -1703,8 +1703,8 @@ def extract_tracking(raw_tracking):
             cleaned_tracking.append(cleaned.upper())
 
     return cleaned_tracking
-""",
-    'g6_task2_w3': """
+```""",
+    'g6_task2_w3': """```python
 def calculate_checksum(tracking_number):
     first_11 = tracking_number[:11]
     
@@ -1718,8 +1718,8 @@ def calculate_checksum(tracking_number):
     checksum_digit = total % 10
     
     return checksum_digit
-""",
-    'g6_task3_w3': """
+```""",
+    'g6_task3_w3': """```python
 def correct_checksums(raw_tracking):
     cleaned_tracking = extract_tracking(raw_tracking)
     corrected_tracking = []
@@ -1740,8 +1740,8 @@ def correct_checksums(raw_tracking):
             print(f"{code} → Checksum digit already correct")
     
     return corrected_tracking
-""",
-    'g6_task4_w3': """
+```""",
+    'g6_task4_w3': """```python
 def tracking_report(raw_tracking):
     cleaned_tracking = extract_tracking(raw_tracking)
 
@@ -1765,8 +1765,8 @@ def tracking_report(raw_tracking):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 tracking_report(raw_tracking)
-""",
-    'g6_task5_w3': """
+```""",
+    'g6_task5_w3': """```python
 def format_tracking(tracking_number):
     part1 = tracking_number[:2]       
     part2 = tracking_number[2:6]      
@@ -1776,8 +1776,8 @@ def format_tracking(tracking_number):
 
     formatted = f"{part1}-{part2}-{part3}-{part4}{check_char}"
     return formatted
-""",
-    'g6_task6_w3': """
+```""",
+    'g6_task6_w3': """```python
 def add_region(raw_tracking):
     cleaned_tracking = extract_tracking(raw_tracking)
     categorized_tracking = []
@@ -1797,8 +1797,8 @@ def add_region(raw_tracking):
     return categorized_tracking
 
 add_region(raw_tracking)
-""",
-    'g7_task1_w3': """
+```""",
+    'g7_task1_w3': """```python
 def extract_badges(raw_badges):
     cleaned_badges = []
 
@@ -1820,8 +1820,8 @@ def extract_badges(raw_badges):
             cleaned_badges.append(cleaned.upper())
 
     return cleaned_badges
-""",
-    'g7_task2_w3': """
+```""",
+    'g7_task2_w3': """```python
 def calculate_security_digit(badge_id):
     first_9 = badge_id[:9]
     
@@ -1834,8 +1834,8 @@ def calculate_security_digit(badge_id):
     security_digit = total % 10
     
     return security_digit
-""",
-    'g7_task3_w3': """
+```""",
+    'g7_task3_w3': """```python
 def correct_security_digits(raw_badges):
     cleaned_badges = extract_badges(raw_badges)
     corrected_badges = []
@@ -1856,8 +1856,8 @@ def correct_security_digits(raw_badges):
             print(f"{code} → Security digit already correct")
     
     return corrected_badges
-""",
-    'g7_task4_w3': """
+```""",
+    'g7_task4_w3': """```python
 def badge_report(raw_badges):
     cleaned_badges = extract_badges(raw_badges)
 
@@ -1879,8 +1879,8 @@ def badge_report(raw_badges):
     print(f"Number of correct codes: {correct}")
     print(f"Number of incorrect codes: {incorrect}")
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
-""",
-    'g7_task5_w3': """
+```""",
+    'g7_task5_w3': """```python
 def format_badge(badge_id):
     part1 = badge_id[:2]       
     part2 = badge_id[2:6]     
@@ -1889,8 +1889,8 @@ def format_badge(badge_id):
 
     formatted = f"{part1}-{part2}-{part3}{check_char}"
     return formatted
-""",
-    'g7_task6_w3': """
+```""",
+    'g7_task6_w3': """```python
 def add_department(raw_badges):
     cleaned_badges = extract_badges(raw_badges)
     categorized_badges = []
@@ -1912,8 +1912,8 @@ def add_department(raw_badges):
     return categorized_badges
 
 add_department(raw_badges)
-""",
-    'g8_task1_w3': """
+```""",
+    'g8_task1_w3': """```python
 def extract_prescriptions(raw_prescriptions):
     cleaned_prescriptions = []
 
@@ -1935,8 +1935,8 @@ def extract_prescriptions(raw_prescriptions):
             cleaned_prescriptions.append(cleaned.upper())
 
     return cleaned_prescriptions
-""",
-    'g8_task2_w3': """
+```""",
+    'g8_task2_w3': """```python
 def calculate_validation_digit(prescription_code):
     first_8 = prescription_code[:8]
     
@@ -1949,8 +1949,8 @@ def calculate_validation_digit(prescription_code):
     validation_digit = total % 10
     
     return validation_digit
-""",
-    'g8_task3_w3': """
+```""",
+    'g8_task3_w3': """```python
 def correct_validation_digits(raw_prescriptions):
     cleaned_prescriptions = extract_prescriptions(raw_prescriptions)
     corrected_prescriptions = []
@@ -1971,8 +1971,8 @@ def correct_validation_digits(raw_prescriptions):
             print(f"{code} → Validation digit already correct")
     
     return corrected_prescriptions
-""",
-    'g8_task4_w3': """
+```""",
+    'g8_task4_w3': """```python
 def prescription_report(raw_prescriptions):
     cleaned_prescriptions = extract_prescriptions(raw_prescriptions)
 
@@ -1996,8 +1996,8 @@ def prescription_report(raw_prescriptions):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 prescription_report(raw_prescriptions)
-""",
-    'g8_task5_w3': """
+```""",
+    'g8_task5_w3': """```python
 def format_prescription(prescription_code):
     part1 = prescription_code[:2]      
     part2 = prescription_code[2:6]     
@@ -2006,8 +2006,8 @@ def format_prescription(prescription_code):
 
     formatted = f"{part1}-{part2}-{part3}{check_char}"
     return formatted
-""",
-    'g8_task6_w3': """
+```""",
+    'g8_task6_w3': """```python
 def add_medication_type(raw_prescriptions):
     cleaned_prescriptions = extract_prescriptions(raw_prescriptions)
     categorized_prescriptions = []
@@ -2029,8 +2029,8 @@ def add_medication_type(raw_prescriptions):
     return categorized_prescriptions
 
 add_medication_type(raw_prescriptions)
-""",
-    'g9_task1_w3': """
+```""",
+    'g9_task1_w3': """```python
 def extract_tickets(raw_tickets):
     cleaned_tickets = []
 
@@ -2052,8 +2052,8 @@ def extract_tickets(raw_tickets):
             cleaned_tickets.append(cleaned.upper())
 
     return cleaned_tickets
-""",
-    'g9_task2_w3': """
+```""",
+    'g9_task2_w3': """```python
 def calculate_control_digit(ticket_serial):
     first_10 = ticket_serial[:10]
     
@@ -2066,8 +2066,8 @@ def calculate_control_digit(ticket_serial):
     control_digit = total % 10
     
     return control_digit
-""",
-    'g9_task3_w3': """
+```""",
+    'g9_task3_w3': """```python
 def correct_control_digits(raw_tickets):
     cleaned_tickets = extract_tickets(raw_tickets)
     corrected_tickets = []
@@ -2088,8 +2088,8 @@ def correct_control_digits(raw_tickets):
             print(f"{code} → Control digit already correct")
     
     return corrected_tickets
-""",
-    'g9_task4_w3': """
+```""",
+    'g9_task4_w3': """```python
 def ticket_report(raw_tickets):
     cleaned_tickets = extract_tickets(raw_tickets)
 
@@ -2113,8 +2113,8 @@ def ticket_report(raw_tickets):
     print(f"Percentage of incorrect codes: {percentage_incorrect}%")
 
 ticket_report(raw_tickets)
-""",
-    'g9_task5_w3': """
+```""",
+    'g9_task5_w3': """```python
 def format_ticket(ticket_serial):
     part1 = ticket_serial[:3]      
     part2 = ticket_serial[3:7]     
@@ -2123,8 +2123,8 @@ def format_ticket(ticket_serial):
 
     formatted = f"{part1}-{part2}-{part3}{check_char}"
     return formatted
-""",
-    'g9_task6_w3': """
+```""",
+    'g9_task6_w3': """```python
 def add_ticket_category(raw_tickets):
     cleaned_tickets = extract_tickets(raw_tickets)
     categorized_tickets = []
@@ -2146,5 +2146,5 @@ def add_ticket_category(raw_tickets):
     return categorized_tickets
 
 add_ticket_category(raw_tickets)
-""",
+```""",
 }
