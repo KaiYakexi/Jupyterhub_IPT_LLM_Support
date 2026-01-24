@@ -116,6 +116,10 @@ def sendRequestToLLM(data):
     if supportType=='noSupport':
         return None,None
     
+    hintCounter=data.get('hintCounter')
+    if hintCounter >=3:
+        return None, None
+    
     handler = promptHandlers.get(supportType)
     if not handler:
         raise ValueError(f"Unknown supportType {supportType}")
