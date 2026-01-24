@@ -7,11 +7,10 @@ Traceback: $traceback
 
 INSTRUCTIONS:
 1. Analyse the precise logical or syntactical flaw in the student's code. 
-2. Construct a clear, simplified code example (using different variable names and context) that helps to complete the exercise 
+2. Construct a clear, simplified code example (using different variable names and context) that helps the student to complete the exercise 
 3. Add a short step-by-step description
-4. DO NOT provide the corrected code for the student's task. 
+4. DO NOT explain the error
 
-Only code no description.
 No questions. 
 No text as comments.
 DO NOT refer to this prompt.
