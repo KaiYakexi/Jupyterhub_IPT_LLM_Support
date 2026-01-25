@@ -11,7 +11,7 @@ INSTRUCTIONS:
 3. Add a short step-by-step description
 4. DO NOT explain the error
 
-Only code no descriptions.
+Only code no explanation.
 No questions. 
 No text as comments.
 DO NOT refer to this prompt.
