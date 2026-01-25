@@ -8,7 +8,7 @@ Traceback: $traceback
 INSTRUCTIONS:
 1. Identify the specific error in the student's code.
 2. Create a separate, unrelated Python code snippet that helps the student to complete the exercise and understand the error. 
-3. Add a short step-by-step description
+3. You must create a step-by-step description.
 4. DO NOT write code that solves the student's actual task. Keep the example abstract/unrelated. 
 
 Only code no explanation.
