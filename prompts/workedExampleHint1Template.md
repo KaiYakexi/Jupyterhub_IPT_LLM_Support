@@ -11,6 +11,7 @@ INSTRUCTIONS:
 3. Add a short step-by-step description
 4. DO NOT write code that solves the student's actual task. Keep the example abstract/unrelated. 
 
+Only code no descriptions
 No questions. 
 No text as comments.
 DO NOT refer to this prompt.
