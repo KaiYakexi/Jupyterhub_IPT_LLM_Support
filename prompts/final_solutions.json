@@ -1,0 +1,6 @@
+{
+    "exercise1":{
+        "instructionalText":"InstructionalTextPromptForExercise1",
+        "workedExample":"workedExamplePromptForExercise1"
+    }
+}

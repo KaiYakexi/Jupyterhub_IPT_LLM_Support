@@ -15,8 +15,25 @@ import datetime
 import requests
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from string import Template
+from pathlib import Path
 
-#
+
+
+
+
+from solutions import SOLUTIONS
+
+TEMPLATE_DIR=Path("prompts")
+promptTemplates= {}
+
+
+def load_prompt_templates():
+    for path in TEMPLATE_DIR.glob("*.md"):
+        with path.open(encoding="utf-8") as f:
+            promptTemplates[path.stem] = Template(f.read())
+            
+load_prompt_templates()
 #
 #
 #
@@ -51,28 +68,75 @@ app.secret_key = secrets.token_bytes(32)
 
 
 
+
+def genericPrompt(data):
+    return f"How do I solve a {data['errorName']} error in Python?"
+
+def personalizedPrompt(data):
+    return f"""How do I solve this {data['errorName']} in Python,
+     this is my traceback: {data['traceback']} 
+    and this is my source code: {data['sourceCode']}"""
+
+def customPrompt(data):
+    return f"""{data['customPrompt']}+{data['sourceCode']}+{data['traceback']}"""
+
+# Max hints before giving out the solution (starting from 0)
+maxHints=3
+
+def instructionalTextPrompt(data):
+    hintCounter=data['hintCounter']
+    if int(hintCounter) < maxHints:
+        templateName="instructionalHint"+str(hintCounter)+"Template"
+        templateForPrompt= promptTemplates[templateName]
+        return templateForPrompt.substitute(sourceCode=data['sourceCode'],traceback=data['traceback'],taskDescription=data['taskDescription'])
+    return None
+
+def workedExamplePrompt(data):
+    hintCounter=data['hintCounter']
+    if int(hintCounter) < maxHints:
+        templateName="workedExampleHint"+str(hintCounter)+"Template"
+        templateForPrompt= promptTemplates[templateName]
+        return templateForPrompt.substitute(sourceCode=data['sourceCode'],traceback=data['traceback'],taskDescription=data['taskDescription'])
+    return None
+
+
+
+promptHandlers = {
+    "genericSupport": genericPrompt,
+    "personalizedSupport": personalizedPrompt,
+    "customPrompt":customPrompt,
+    "instructionalText":instructionalTextPrompt,
+    "workedExample":workedExamplePrompt
+}
+
+
+
 def sendRequestToLLM(data):
-    if data['supportType']=='noSupport':
-        return
-    elif data['supportType']=='customPrompt':
-        prompt=f"""{data['customPrompt']}+{data['sourceCode']}+{data['traceback']}"""
-    elif data['supportType']=='genericSupport':
-        prompt = f"""
-    How do I solve a {data['errorName']} error in Python?
-    """
-    elif data['supportType']=='personalizedSupport':
-        prompt = f"""
-    How do I solve this {data['errorName']} in Python, this is my traceback: {data['traceback']}
-    and this is my source code: {data['sourceCode']}   
-"""
-    completion = client.chat.completions.create(
-  model="gpt-3.5-turbo",
-  messages=[
-    {"role": "system", "content": "You are a helpful programming assistent"},
-    {"role": "user","content":prompt}
-  ]
-)
-    return completion.choices[0].message.content
+    supportType=data.get("supportType")
+    if supportType=='noSupport':
+        return None,None
+    
+    hintCounter=data.get('hintCounter')
+    if hintCounter >=3:
+        return None, None
+    
+    handler = promptHandlers.get(supportType)
+    if not handler:
+        raise ValueError(f"Unknown supportType {supportType}")
+    prompt=handler(data)
+    if prompt is None:
+        return 'Solution by teacher',SOLUTIONS[data["cellIdentifier"]]
+    response = client.responses.create(
+    model="gpt-4.1",
+    input=[
+        {"role": "system", "content": "You are a helpful programming assistant"},
+        {"role": "user", "content": prompt}
+    ])
+    if supportType=='workedExample':
+        # Turn response into markdown code block
+        responseText=f"""```python\n{response.output_text}\n```"""
+        return prompt,responseText
+    return prompt,response.output_text
 
 def authenticated(f):
     """Decorator for authenticating with the Hub via API token"""
@@ -161,22 +225,21 @@ def userSupportGroup(user):
 
 
 
-#@app.route(prefix+'testDB', methods=['GET'])
-#@oauthenticated
-#def testDB(user):
-#    try:
-#        db=get_db()
-#        _loggedData = db.loggedData_data.find()
-#        loggedData = json_util.dumps(list(_loggedData))
-#        response={'Data': loggedData}
-#        return Response(
-#            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
-#        )
-#    except Exception as e:
-#        return Response(
-#            json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
-#        )
-
+@app.route(prefix+'testDB', methods=['GET'])
+@oauthenticated
+def testDB(user):
+    try:
+        db=get_db()
+        _loggedData = db.loggedData_data.find()
+        loggedData = json_util.dumps(list(_loggedData))
+        response={'Data': loggedData}
+        return Response(
+            json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
+        )
+    except Exception as e:
+        return Response(
+           json.dumps({'success': False, 'message': str(e)}, indent=1, sort_keys=True), mimetype='application/json'
+        )
 
         
 @app.route(prefix+'successLog', methods=['POST'])
@@ -204,10 +267,10 @@ def askLLM(user):
             return Response(
                 json.dumps({'error': 'No payload received'},status=400)
             )
-        LLMResponse=sendRequestToLLM(data)
+        promptUsed,LLMResponse=sendRequestToLLM(data)
+        data['promptUsed']=promptUsed
         response={'LLMResponse':LLMResponse}
         sendTS=datetime.datetime.now().timestamp()
-        db= get_db()
         data['user']=user['name']
         data['receptionTS']=receptionTS
         data['sendTS']=sendTS

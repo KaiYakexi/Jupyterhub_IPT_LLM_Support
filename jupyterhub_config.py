@@ -7,10 +7,11 @@ c.JupyterHub.template_paths = ['/srv/jupyterhub/templates']
 
 # Core Hub
 c.JupyterHub.authenticator_class = NativeAuthenticator
-c.JupyterHub.base_url = '/jupyterhub'
 c.JupyterHub.log_level = 'DEBUG'
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
+c.JupyterHub.base_url="/jupyterhub"
+
 
 # Auth
 c.Authenticator.allowed_users = {'admin'}
@@ -29,8 +30,8 @@ def pre_spawn_hook(spawner):
     # Not required if you only host one course
     #if 'courseone' in group_names:
     spawner.volumes = {
-            'jupyterhub-user-{username}': '/home/jovyan/work',
-            '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY': '/tmp/source',  # ensure this exists on the host
+            'jupyterhub-user-{username}': '/home/jovyan/work'    #,
+         #   '$ABSOLUTE_PATH_TO_COURSE_DIRECTORY': '/tmp/source',  # ensure this exists on the host
     }
     spawner.notebook_dir = '/home/jovyan/work'
     spawner.image = 'jupyterlab-students:latest'
