@@ -1,41 +1,74 @@
 services:
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      VOLUMES: 1
+      POST: 1
+      IMAGES: 1
+      INFO: 1
+      VERSION: 1
+    networks:
+      - backend
+
   jupyterhub:
     build: .
     image: jupyterhub-custom
     container_name: jupyterhub-container
     depends_on:
       - db
+      - docker-socket-proxy
+    env_file: .env
+    environment:
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./templates:/srv/jupyterhub/templates
      # - ./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
       - jupyterhub_data:/srv/jupyterhub/data
      # - ./logService.py:/srv/jupyterhub/logService.py
+      - ./secrets:/run/secrets:ro
     expose:
       - "8000"
     networks:
-      - jupyterhub
+      - backend
+      - students
+
   db:
-    image: mongo:latest
+    image: mongo:7.0
     hostname: mongodb
+    mem_limit: 2g
+    cpus: '1.0'
+    pids_limit: 200
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
     environment:
       - MONGO_INITDB_DATABASE=loggedData
-      - MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
-      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
+      - MONGO_INITDB_ROOT_USERNAME_FILE=/run/secrets/mongo_username
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_password
     volumes:
       - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
       - ./mongodbvolume:/data/db
-    networks: 
-      - jupyterhub
-  nginx:
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
+      - ./secrets/mongo_username:/run/secrets/mongo_username:ro
+      - ./secrets/mongo_password:/run/secrets/mongo_password:ro
     networks:
-      - jupyterhub
+      - backend
+
+  nginx:
+    image: 'jc21/nginx-proxy-manager:2.12.1'
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: '0.5'
+    pids_limit: 200
+    networks:
+      - students
+      - frontend
     ports:
       - '80:80'
       - '443:443'
-      - '81:81'
+      - '127.0.0.1:81:81'
     environment:
       DISABLE_IPV6: 'true'
     volumes:
@@ -44,6 +77,17 @@ services:
 
 volumes:
   jupyterhub_data:
+
 networks:
-  jupyterhub:
-    name: jupyterhub
+  backend:
+    name: backend
+    internal: true
+  students:
+    name: students
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+  frontend:
+    name: frontend
+    driver: bridge

@@ -7,7 +7,7 @@ c.JupyterHub.template_paths = ['/srv/jupyterhub/templates']
 
 # Core Hub
 c.JupyterHub.authenticator_class = NativeAuthenticator
-c.JupyterHub.log_level = 'DEBUG'
+c.JupyterHub.log_level = os.environ.get('JUPYTERHUB_LOG_LEVEL', 'INFO')
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 c.JupyterHub.base_url="/jupyterhub"
@@ -21,7 +21,7 @@ c.NativeAuthenticator.open_signup = True
 # Spawner
 c.Spawner.http_timeout = 300
 c.DockerSpawner.mem_limit = '4G'
-c.DockerSpawner.network_name = 'jupyterhub'
+c.DockerSpawner.network_name = 'students'
 c.DockerSpawner.remove = True
 c.JupyterHub.spawner_class = DockerSpawner
 
