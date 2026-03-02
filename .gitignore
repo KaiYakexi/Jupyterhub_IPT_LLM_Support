@@ -1,2 +1,12 @@
 mongodbvolume/*
 .DS_Store
+.env
+*.pyc
+__pycache__/
+.idea/
+.vscode/
+nginxdata/
+letsencrypt/
+*.log
+*.sqlite
+secrets/
