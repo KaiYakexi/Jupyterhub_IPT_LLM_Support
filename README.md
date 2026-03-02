@@ -1,81 +1,59 @@
-# Creating the JupyterLab image with AI support functions.
+# Creating the JupyterLab image with AI support functions
 
-JupyterHub uses DockerSpawner to create a JupyterLab environment for users. To do this. A JupyterLab docker image is required. You can use this [repo](https://github.com/COLAPS-Research/aipromptextensionshttps://github.com/COLAPS-Research/aipromptextensions), which also contains our implemented AI support functions in form of JupyterLab extensions. THe AI support functions only trigger on compile or runtime-errors of cells with a speciic _supportModel_ metatag. These extensions communicate with our logging and llm service that this JupyterHub implementation manages. To create the JupyterLab image, follow these steps:
-1. Go into the studentContainers repository
-2. Clone the [git repository](https://github.com/COLAPS-Research/aipromptextensionshttps://github.com/COLAPS-Research/aipromptextensions) and move into it. 
-3. Replace the value of _setJupyterHubBaseUrl_ with the base url of JupyterHub (e.g. http://localhost:8533/jupyterhub for local deployment) in **/extensionManager/src/index.ts**
+JupyterHub uses DockerSpawner to create a JupyterLab environment for users. To do this, a JupyterLab docker image is required. You can use this [repo](https://github.com/COLAPS-Research/aipromptextensions), which also contains our implemented AI support functions in the form of JupyterLab extensions. The AI support functions only trigger on compile or runtime errors of cells with a specific _supportModel_ metatag. These extensions communicate with our logging and LLM service that this JupyterHub implementation manages. To create the JupyterLab image, follow these steps:
+1. Go into the studentContainers directory
+2. Clone the [git repository](https://github.com/COLAPS-Research/aipromptextensions) and move into it
+3. Replace the value of _setJupyterHubBaseUrl_ with the base URL of JupyterHub (e.g. `http://localhost:8533/jupyterhub` for local deployment) in `extensionManager/src/index.ts`
 4. Create the docker image inside the directory of the git repository using:
-`docker build -t jupyterlab-students:latest --label "courseName=jupyterlab-students" . --no-cache`
-
+```
+docker build -t jupyterlab-students:latest --label "courseName=jupyterlab-students" . --no-cache
+```
 
 
 # Adding student exercises
 
-The created JupyterLab images contains a custom script (_start.sh_). If a JupyterLab container spawns, it will run that script and copy files inside that specified directory into the students work environment. If you want to add files to already spawned containers, use the _addToContainer.sh_ script in /studentContainers/courses
+The created JupyterLab image contains a custom script (_start.sh_). When a JupyterLab container spawns, it runs that script and copies files from the specified directory into the student's work environment. If you want to add files to already spawned containers, use the _addToContainer.sh_ script in `/studentContainers/courses`.
 
 
 # Local Deployment
-1. Replace _$JUPYTERHUB_URL_ with "http://host.docker.internal:8000/jupyterhub/hub" in **logService.py**
-2. Replace _$OPENAI_API_KEY_ with your OpenAI API Key in **logService.py**
-3. Configure MongoDB Credentials
-In both **logService.py** and **docker-compose.yml**, replace  _$MONGO_INITDB_ROOT_USERNAME_ and _$MONGO_INITDB_ROOT_PASSWORD_  with your desired MongoDBD credentials
-4. Build and run the containers
-Run the following commands from the project root:
+1. Copy and fill in environment variables:
 ```
-docker compose -f docker-compose.yml build --no-cache
-docker compose -f docker-compose.yml up -d
+cp .env.template .env
 ```
-6. Access your [JupyterHub](http://localhost:8533/jupyterhub) and register using the _admin_ username, then log in using the same username.
+Edit `.env` with your OpenAI API key and MongoDB credentials.
+
+2. Build and run the containers:
+```
+docker compose build --no-cache
+docker compose up -d
+```
+3. Access [JupyterHub](http://localhost:8533/jupyterhub) and register using the _admin_ username, then log in using the same username.
 
 # Production
 
-1. Keep ports 80 and 433 open
-2. Install Docker and add user to 'docker' group
-3. git clone this repository
-4. mv .env.template .env
-5. vi .env and fill it out
-6. sudo bash prod-setup.sh (takes a good while)
-7. Run docker compose ps, check if nginxproxymanager, db and jupyterhub are running.
-If there is an issue, run `docker compose -f docker-compose.prod.yml up -d`and it might fix the issue.
-8. Wait a minute or two, then use SSH Tunnel to access nginxproxymanager.
- ```
-ssh -L 8493:127.0.0.1:81 username@serverip
- ```
-9. Once connected, open your browser and go to http://localhost:8493/login
-10. Default login details are: _admin@example.com_ and _changeme_ (you will be asked to change details once logged in)
-11. http://localhost:8493/nginx/certificates -> Add Certificate -> Lets Encrypt or Custom
-12. http://localhost:8493/nginx/proxy -> Add Proxy Host:
+1. Keep ports 80 and 443 open
+2. Install Docker and add your user to the `docker` group
+3. Clone this repository
+4. Copy and fill in environment variables:
+```
+cp .env.template .env
+```
+5. Set up a reverse proxy (e.g. Nginx Proxy Manager) on an external Docker network named `nginx-proxy`, forwarding traffic to `jupyterhub:8000` with WebSocket support enabled. Add a custom location for `/jupyterhub/services/askLLM` forwarding to `jupyterhub:8000` with the following advanced config:
+```
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+6. Run the deploy script:
+```
+sudo bash prod-setup.sh
+```
+7. Run `docker compose -f docker-compose.prod.yml ps` and check that `db` and `jupyterhub` are running.
+If there is an issue, run `docker compose -f docker-compose.prod.yml up -d`.
 
-## Details:
-```
-Domain name: Domain name
-Scheme: http
-Forward Hostname/IP: jupyterhub
-Forward Port: 8000
-Websockets Support: Yes
-Block Common explots: Yes
-```
-    
-## Custom locations:
-```
-location: /jupyterhub/services/askLLM
-Scheme: http
-Forward Hostname/IP: jupyterhub
-Forward Port: 8000       
-Click on the settings symbol next to location and paste:
-proxy_set_header X-Forwarded_Proto $scheme;
-```
-## SSL:
-```
-Choose certificate and Force SSL and click on saved once finished.
-```
-
-## How to prepare the notebooks:
-1. Create the Jupyter Notebook first.
-2. Design your exercise – Add all your exercise content to the notebook.
+## How to prepare the notebooks
+1. Create the Jupyter Notebook first
+2. Design your exercise — add all your exercise content to the notebook
 3. Set cell permissions (via Cell Metadata in Jupyter inspector):
-    * For all cells: "deletable": false
-    * For all question description cells (Markdown or code): set "editable": false. 
-    * For all solution cells: set "editable": true
-    * For every code cell that is meant to be executed by a user: give it an unique "cellIdentifier" for example courseName_exerciseSheet_exerciseNumber_stepNumber
-4. Add completed Notebook to the system
+    * For all cells: `"deletable": false`
+    * For all question description cells (Markdown or code): set `"editable": false`
+    * For all solution cells: set `"editable": true`
+    * For every code cell that is meant to be executed by a user: give it a unique `"cellIdentifier"`, for example `courseName_exerciseSheet_exerciseNumber_stepNumber`

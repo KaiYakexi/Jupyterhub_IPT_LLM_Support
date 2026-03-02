@@ -1,12 +1,10 @@
 from dockerspawner import DockerSpawner
-from nativeauthenticator import NativeAuthenticator
+import nativeauthenticator
 import os
 
-# Templates
-c.JupyterHub.template_paths = ['/srv/jupyterhub/templates']
-
 # Core Hub
-c.JupyterHub.authenticator_class = NativeAuthenticator
+c.JupyterHub.authenticator_class = 'native'
+c.JupyterHub.template_paths = [f"{os.path.dirname(nativeauthenticator.__file__)}/templates/"]
 c.JupyterHub.log_level = os.environ.get('JUPYTERHUB_LOG_LEVEL', 'INFO')
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
@@ -50,7 +48,12 @@ c.JupyterHub.services = [
             '--workers', '1', '--timeout', '120',
             'logService:app'
         ],
-        'environment': {'FLASK_ENV': 'production'},
+        'environment': {
+            'FLASK_ENV': 'production',
+            'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY', ''),
+            'MONGO_INITDB_ROOT_USERNAME': os.environ.get('MONGO_INITDB_ROOT_USERNAME', ''),
+            'MONGO_INITDB_ROOT_PASSWORD': os.environ.get('MONGO_INITDB_ROOT_PASSWORD', ''),
+        },
     },
     {
         'name': 'cull-idle',

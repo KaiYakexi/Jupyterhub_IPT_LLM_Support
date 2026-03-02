@@ -1,0 +1,151 @@
+{% extends "page.html" %}
+
+{% block script %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let button = document.getElementById('eye');
+        button.addEventListener("click", function(e) {
+            let pwd = document.getElementById("password_input");
+            let pwdc = document.getElementById("password_confirmation_input");
+
+            if (pwd.getAttribute("type") === "password") {
+                pwd.setAttribute("type", "text");
+                pwdc.setAttribute("type", "text");
+                button.textContent = "🔑";
+            } else {
+                pwd.setAttribute("type", "password");
+                pwdc.setAttribute("type", "password");
+                button.textContent = "👁";
+            }
+        });
+    });
+
+    {% if tos %}
+    document.addEventListener('DOMContentLoaded', function() {
+        let checkbox = document.getElementById('tos_check');
+        checkbox.addEventListener("click", function(e) {
+            let submit_button = document.getElementById("signup_submit");
+            submit_button.disabled = ! checkbox.checked;
+        });
+    });
+    {% endif %}
+
+    if (window.location.protocol === "http:") {
+        // unhide http warning
+        let warning = document.getElementById('insecure-login-warning');
+        warning.className = warning.className.replace(/\bhidden\b/, '');
+    }
+</script>
+
+{% if recaptcha_key %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endif %}
+{% endblock script %}
+
+
+{% block main %}
+<div class="container">
+    <h6 style="text-align: center;">
+    Information for participants and consent form:</h6>
+    <p>
+    Thank you for considering participating in this research study. This information sheet outlines the purpose of the study and provides a description of your involvement and rights as a participant, if you agree to take part. It is up to you to decide whether or not to take part. You do not have to take part if you do not want to. The aim of this study is to collect authentic examples of user interaction within an online programming environment.
+    Participation does not require any additional action beyond your usual use of the system. During the study, your interactions with the online programming environment will be automatically logged throughout the winter semester of 2025/26. You can withdraw from the study at any point during the winter semester of 2025/26 and latest by March 31 2026, without having to give a reason. Withdrawing from the study will have no effect on you. If you withdraw from the study, we will not retain the information you have given thus far.
+    We will use the collected information solely for research purposes in the field of computational methods in modelling and analysis of learning processes. During the data collection phase, a reference to each participant will be maintained in order to enable potential withdrawal with data removal. Once the data collection phase is complete, the data will be pseudonymised during pre-processing and then fully anonymised. 
+    All digital files, transcripts, and summaries will be given codes and stored separately from any names or other direct identification of participants. Any hard copies of research information will be kept in locked files at all times. Original data will be destroyed after it has served its initial purpose.
+    Only the anonymised dataset will be used for analysis and publication. The anonymized data will also be shared via GDPR compliant open data repositories (e.g. Zenodo) to promote transparency, and collaboration. If you have any questions regarding this study or want to opt-out of this study, please contact the Principal Investigator, Mona Münstermann at mona.muenstermann@uni-due.de    
+    By proceeding to the next step, you provide consent for the following:
+    <br>
+      <ul>
+        <li>I have read and understood the study information, or it has been read to me. I have no questions about the study</li>
+        <li>I have read and understood the above information and I wish to participate in the research.</li>
+        <li>I consent voluntarily to be a participant in this study,  I understand that I can refuse to answer questions and that I can withdraw from the study throughout its duration without having to give a reason.</li>
+        <li>I understand that the information I provide will be used for research purposes and that information will be anonymized</li>
+        <li>I understand that no personal information that can be used to identify me is collected at any point of this research.</li>
+        <li>I give permission for the anonymised information I provide to be deposited in a data archive so that it may be used for future research.</li>
+      </ul>
+      </p>
+    </div>
+{% block login %}
+<div id="login-main" class="container">
+    <form action="{{post_url}}" method="post" role="form">
+        <div class="auth-form-header">
+            Sign Up
+        </div>
+        <div class='auth-form-body'>
+            <p id='insecure-login-warning' class='hidden'>
+                Warning: seems to be served over an unsecured HTTP connection.
+                We strongly recommend enabling HTTPS for JupyterHub.
+            </p>
+
+            {% if alert %}
+            <div class="alert {{alert}}" role="alert">
+                <p>
+                    {{result_message}}
+                </p>
+
+                {% if two_factor_auth_user %}
+                <p>
+                    <strong>Attention!</strong> You have configured two factor authentication.
+                    Your two factor authentication code is <strong>{{ two_factor_auth_value }}</strong>.
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+            <input type="hidden" name="_xsrf" value="{{ xsrf }}"/>
+            <label for="username_input">Username:</label>
+            <input id="username_input" type="text" name="username" val="{{username}}" autocapitalize="off" autocorrect="off" class="form-control" autofocus="autofocus" required />
+            <p></p>
+
+            {% if ask_email %}
+            <label for="email_input">Email:</label>
+            <input id="email_input" type="email" name="email" val="{{email}}" class="form-control" required />
+            <p></p>
+            {% endif %}
+
+            <label for="password_input">Password:</label>
+            <div class="input-group">
+                <input id="password_input" type="password" name="signup_password" val="" autocapitalize="off" autocorrect="off" class="form-control" />
+                <span class="input-group-addon">
+                    <button id="eye" type="button" style="border:0;">👁</button>
+                </span>
+            </div>
+            <p></p>
+            
+            <label for="password_confirm">Confirm password:</label>
+            <div class="input-group">
+                <input id="password_confirmation_input" type="password" name="signup_password_confirmation" val="" autocapitalize="off" autocorrect="off" class="form-control" />
+            </div>
+            <p></p>
+
+            {% if two_factor_auth %}
+            <input type="checkbox" id="2fa" name="2fa" value="2fa">
+                Setup two factor authentication
+            </input>
+            <p></p>
+            {% endif %}
+
+            {% if tos %}
+            <input type="checkbox" id="tos_check">
+                {{tos|safe}}
+            </input>
+            <p></p>
+            {% endif %}
+
+            {% if recaptcha_key %}
+            <div class="g-recaptcha" data-sitekey="{{ recaptcha_key }}"></div>
+            <p></p>
+            {% endif %}
+
+            <input type="submit" id="signup_submit" class='btn btn-jupyter' value='Create User' {% if tos %}disabled{% endif %} />
+            <p></p>
+
+            <hr />
+            <p>
+                <a href="{{ base_url }}login">Login</a> with an existing user.
+            </p>
+        </div>
+    </form>
+</div>
+{% endblock login %}
+{% endblock main %}
