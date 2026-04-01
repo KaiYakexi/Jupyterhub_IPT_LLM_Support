@@ -38,7 +38,7 @@ env:
   TF_PROJECT_NAME: ${{ vars.TF_PROJECT_NAME || 'jupyterhub-edu' }}
   TF_LOCATION: ${{ vars.TF_LOCATION || 'westeurope' }}
   # Hardcoded defaults
-  TF_ENVIRONMENT: dev
+  TF_ENVIRONMENT: prod
   TF_VM_SIZE: Standard_B2s_v2
   TF_NODE_MIN_COUNT: 1
   TF_NODE_MAX_COUNT: 3
