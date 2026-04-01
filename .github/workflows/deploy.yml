@@ -2,45 +2,40 @@
 #
 # Trigger: manual only (workflow_dispatch)
 #
-# Required GitHub Secrets:
-#   AZURE_CLIENT_ID            - App registration client ID
-#   AZURE_TENANT_ID            - Azure AD tenant ID
-#   AZURE_SUBSCRIPTION_ID      - Azure subscription ID
-#   OPENAI_API_KEY             - OpenAI API key
-#   MONGO_USERNAME             - MongoDB root username
-#   MONGO_PASSWORD             - MongoDB root password
-#   FLASK_SECRET_KEY           - Flask session key (openssl rand -hex 32)
-#   JUPYTERHUB_ASKLLM_API_TOKEN - Shared token between Hub and Flask (openssl rand -hex 32)
-#   OAUTH_CLIENT_ID     - GitHub OAuth app client ID
-#   OAUTH_CLIENT_SECRET - GitHub OAuth app client secret
+# Required GitHub Secrets (6):
+#   AZURE_CREDENTIALS           - Service principal JSON (az ad sp create-for-rbac --json-auth)
+#   OPENAI_API_KEY              - OpenAI API key
+#   MONGO_PASSWORD              - MongoDB root password (pick one or: openssl rand -base64 24)
+#   OAUTH_CLIENT_ID             - GitHub OAuth app client ID
+#   OAUTH_CLIENT_SECRET         - GitHub OAuth app client secret
+#   JUPYTERHUB_ASKLLM_API_TOKEN - Shared token (openssl rand -hex 32)
 #
-#   DOMAIN                     - Your domain (e.g., example.com)
-#   CONTACT_EMAIL              - Email for LetsEncrypt
-#   OAUTH_ADMIN_USER          - GitHub username for JupyterHub admin
-#   LOAD_BALANCER_IP           - Static IP (optional, leave empty for dynamic)
-#   TF_PROJECT_NAME            - Terraform project name (e.g., my-jupyterhub)
-#   TF_LOCATION                - Azure region (e.g., westeurope)
-#   TF_ENVIRONMENT             - Environment (e.g., dev)
-#   TF_VM_SIZE                 - AKS VM size (e.g., Standard_B2s_v2)
-#   TF_NODE_MIN_COUNT          - Min autoscale nodes (e.g., 1)
-#   TF_NODE_MAX_COUNT          - Max autoscale nodes (e.g., 3)
-#   TF_ACR_SKU                 - ACR SKU (e.g., Basic)
-#   K8S_NAMESPACE              - Kubernetes namespace (e.g., jupyterhub)
-#   TF_STATE_RESOURCE_GROUP    - Resource group for Terraform state storage (e.g., rg-tfstate)
-#   TF_STATE_STORAGE_ACCOUNT   - Storage account for Terraform state (e.g., sttfstatejupyterhub)
-#   TF_STATE_CONTAINER         - Blob container name (e.g., tfstate)
+# Required GitHub Variables (3):
+#   DOMAIN                      - Your domain (e.g., example.com)
+#   CONTACT_EMAIL               - Email for LetsEncrypt
+#   OAUTH_ADMIN_USER            - GitHub username for JupyterHub admin
+#
+# Optional GitHub Variables:
+#   TF_PROJECT_NAME             - Base name for Azure resources (default: jupyterhub-edu)
+#   TF_LOCATION                 - Azure region (default: westeurope)
 
 name: Deploy to AKS
 
 on:
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 env:
-  K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'jupyterhub' }}
+  # Configurable (with defaults)
+  TF_PROJECT_NAME: ${{ vars.TF_PROJECT_NAME || 'jupyterhub-edu' }}
+  TF_LOCATION: ${{ vars.TF_LOCATION || 'westeurope' }}
+  # Hardcoded defaults
+  TF_ENVIRONMENT: dev
+  TF_VM_SIZE: Standard_B2s_v2
+  TF_NODE_MIN_COUNT: 1
+  TF_NODE_MAX_COUNT: 3
+  TF_ACR_SKU: Basic
+  K8S_NAMESPACE: jupyterhub
+  MONGO_USERNAME: root
 
 jobs:
   terraform:
@@ -58,138 +53,73 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Parse Azure credentials for Terraform
+        run: |
+          echo "ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientId)" >> "$GITHUB_ENV"
+          echo "ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientSecret)" >> "$GITHUB_ENV"
+          echo "ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .tenantId)" >> "$GITHUB_ENV"
+          echo "ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)" >> "$GITHUB_ENV"
+
+      - name: Bootstrap Terraform state storage
+        run: |
+          PROJECT="${{ env.TF_PROJECT_NAME }}"
+          LOCATION="${{ env.TF_LOCATION }}"
+          RG="rg-${PROJECT}-tfstate"
+          # Storage account: alphanumeric only, max 24 chars
+          SA="st$(echo "${PROJECT}" | tr -d '-' | cut -c1-16)tfstate"
+          CONTAINER="tfstate"
+
+          az group create --name "$RG" --location "$LOCATION" --output none 2>/dev/null || true
+          az storage account create --name "$SA" --resource-group "$RG" \
+            --location "$LOCATION" --sku Standard_LRS --kind StorageV2 \
+            --output none 2>/dev/null || true
+          az storage container create --name "$CONTAINER" --account-name "$SA" \
+            --auth-mode login --output none 2>/dev/null || true
+
+          # Grant the service principal access to the state storage
+          SA_ID=$(az storage account show --name "$SA" --resource-group "$RG" --query id -o tsv)
+          az role assignment create --role "Storage Blob Data Contributor" \
+            --assignee "$ARM_CLIENT_ID" --scope "$SA_ID" --output none 2>/dev/null || true
+
+          echo "TF_STATE_RG=$RG" >> "$GITHUB_ENV"
+          echo "TF_STATE_SA=$SA" >> "$GITHUB_ENV"
+          echo "TF_STATE_CONTAINER=$CONTAINER" >> "$GITHUB_ENV"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
-      - name: Bootstrap Terraform state storage
-        run: |
-          RG="${{ secrets.TF_STATE_RESOURCE_GROUP }}"
-          SA="${{ secrets.TF_STATE_STORAGE_ACCOUNT }}"
-          CONTAINER="${{ secrets.TF_STATE_CONTAINER }}"
-          LOCATION="${{ secrets.TF_LOCATION }}"
-
-          # Create resource group for state if it doesn't exist
-          az group create --name "$RG" --location "$LOCATION" --output none 2>/dev/null || true
-
-          # Create storage account if it doesn't exist
-          az storage account create \
-            --name "$SA" \
-            --resource-group "$RG" \
-            --location "$LOCATION" \
-            --sku Standard_LRS \
-            --kind StorageV2 \
-            --output none 2>/dev/null || true
-
-          # Create blob container if it doesn't exist
-          az storage container create \
-            --name "$CONTAINER" \
-            --account-name "$SA" \
-            --auth-mode login \
-            --output none 2>/dev/null || true
-
-          # Grant the service principal access to read/write state blobs
-          SA_ID=$(az storage account show --name "$SA" --resource-group "$RG" --query id -o tsv)
-          az role assignment create \
-            --role "Storage Blob Data Contributor" \
-            --assignee "${{ secrets.AZURE_CLIENT_ID }}" \
-            --scope "$SA_ID" \
-            --output none 2>/dev/null || true
-
       - name: Terraform Init
         working-directory: infra/terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_USE_OIDC: "true"
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
-            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
-            -backend-config="key=terraform.tfstate" \
-            -backend-config="use_oidc=true"
+            -backend-config="resource_group_name=${{ env.TF_STATE_RG }}" \
+            -backend-config="storage_account_name=${{ env.TF_STATE_SA }}" \
+            -backend-config="container_name=${{ env.TF_STATE_CONTAINER }}" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Create tfvars
         working-directory: infra/terraform
         run: |
           cat > terraform.tfvars <<EOF
-          project_name   = "${{ secrets.TF_PROJECT_NAME }}"
-          location       = "${{ secrets.TF_LOCATION }}"
-          environment    = "${{ secrets.TF_ENVIRONMENT }}"
-          vm_size        = "${{ secrets.TF_VM_SIZE }}"
-          node_min_count = ${{ secrets.TF_NODE_MIN_COUNT || '1' }}
-          node_max_count = ${{ secrets.TF_NODE_MAX_COUNT || '3' }}
-          acr_sku        = "${{ secrets.TF_ACR_SKU || 'Basic' }}"
+          project_name   = "${{ env.TF_PROJECT_NAME }}"
+          location       = "${{ env.TF_LOCATION }}"
+          environment    = "${{ env.TF_ENVIRONMENT }}"
+          vm_size        = "${{ env.TF_VM_SIZE }}"
+          node_min_count = ${{ env.TF_NODE_MIN_COUNT }}
+          node_max_count = ${{ env.TF_NODE_MAX_COUNT }}
+          acr_sku        = "${{ env.TF_ACR_SKU }}"
           EOF
-
-      - name: Import existing resources (safe to re-run)
-        working-directory: infra/terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_USE_OIDC: "true"
-        run: |
-          SUB_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-          PROJECT="${{ secrets.TF_PROJECT_NAME }}"
-          ENV="${{ secrets.TF_ENVIRONMENT }}"
-          RG="rg-${PROJECT}-${ENV}"
-          ACR=$(echo "${PROJECT}${ENV}" | tr -d '-')
-
-          import_if_needed() {
-            local addr="$1"
-            local id="$2"
-            # Skip if already in state
-            if terraform state show "$addr" &>/dev/null; then
-              echo "✓ $addr already in state"
-              return
-            fi
-            # Try to import; ignore if resource doesn't exist in Azure
-            if terraform import "$addr" "$id" 2>&1; then
-              echo "✓ Imported $addr"
-            else
-              echo "⊘ $addr not found in Azure, will be created"
-            fi
-          }
-
-          import_if_needed azurerm_resource_group.main \
-            "/subscriptions/${SUB_ID}/resourceGroups/${RG}"
-
-          import_if_needed azurerm_container_registry.main \
-            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.ContainerRegistry/registries/${ACR}"
-
-          import_if_needed azurerm_virtual_network.main \
-            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Network/virtualNetworks/vnet-${PROJECT}-${ENV}"
-
-          import_if_needed azurerm_subnet.aks \
-            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Network/virtualNetworks/vnet-${PROJECT}-${ENV}/subnets/snet-aks-${PROJECT}-${ENV}"
-
-          import_if_needed azurerm_kubernetes_cluster.main \
-            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.ContainerService/managedClusters/aks-${PROJECT}-${ENV}"
 
       - name: Terraform Plan
         working-directory: infra/terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_USE_OIDC: "true"
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
         working-directory: infra/terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_USE_OIDC: "true"
         run: terraform apply -auto-approve tfplan
 
       - name: Capture Terraform Outputs
@@ -240,9 +170,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Get AKS Credentials
         run: |
@@ -257,17 +185,17 @@ jobs:
 
       - name: Create K8s secrets
         run: |
-          # jupyterhub-secrets (used by Flask logService)
+          FLASK_KEY=$(openssl rand -hex 32)
+
           kubectl create secret generic jupyterhub-secrets \
             --namespace=${{ env.K8S_NAMESPACE }} \
             --from-literal=openai-api-key='${{ secrets.OPENAI_API_KEY }}' \
-            --from-literal=mongo-username='${{ secrets.MONGO_USERNAME }}' \
+            --from-literal=mongo-username='${{ env.MONGO_USERNAME }}' \
             --from-literal=mongo-password='${{ secrets.MONGO_PASSWORD }}' \
-            --from-literal=flask-secret-key='${{ secrets.FLASK_SECRET_KEY }}' \
+            --from-literal=flask-secret-key="${FLASK_KEY}" \
             --from-literal=jupyterhub-askllm-api-token='${{ secrets.JUPYTERHUB_ASKLLM_API_TOKEN }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # mongodb-auth (used by Bitnami MongoDB Helm chart)
           kubectl create secret generic mongodb-auth \
             --namespace=${{ env.K8S_NAMESPACE }} \
             --from-literal=mongodb-root-password='${{ secrets.MONGO_PASSWORD }}' \
@@ -283,10 +211,10 @@ jobs:
       - name: Generate Helm config from template
         env:
           ACR_LOGIN_SERVER: ${{ needs.terraform.outputs.acr_login_server }}
-          DOMAIN: ${{ secrets.DOMAIN }}
-          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
-          LOAD_BALANCER_IP: ${{ secrets.LOAD_BALANCER_IP }}
-          OAUTH_ADMIN_USER: ${{ secrets.OAUTH_ADMIN_USER }}
+          DOMAIN: ${{ vars.DOMAIN }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          LOAD_BALANCER_IP: ""
+          OAUTH_ADMIN_USER: ${{ vars.OAUTH_ADMIN_USER }}
           OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
           OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
           JUPYTERHUB_ASKLLM_API_TOKEN: ${{ secrets.JUPYTERHUB_ASKLLM_API_TOKEN }}

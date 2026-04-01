@@ -22,8 +22,9 @@ terraform {
 provider "azurerm" {
   features {}
 
-  # Terraform will use the credentials from `az login`.
-  # In CI/CD (Phase 8), we'll use a service principal instead.
+  # Locally: uses credentials from `az login`.
+  # In CI: ARM_CLIENT_ID/ARM_CLIENT_SECRET/ARM_TENANT_ID/ARM_SUBSCRIPTION_ID
+  # env vars provide service principal auth automatically.
 }
 
 # A resource group is like a folder - everything in your project goes inside it.
