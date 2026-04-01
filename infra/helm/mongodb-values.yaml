@@ -1,0 +1,45 @@
+# Bitnami MongoDB Helm chart values
+#
+# Install with:
+#   helm install mongodb oci://registry-1.docker.io/bitnamicharts/mongodb \
+#     -f infra/helm/mongodb-values.yaml -n jupyterhub
+#
+# The fullnameOverride ensures the K8s Service is named "mongodb"
+# (not "mongodb-mongodb"), matching what logService.py expects.
+
+fullnameOverride: mongodb
+
+architecture: standalone
+
+auth:
+  enabled: true
+  rootUser: root
+  # Set via --set or a K8s secret. Do NOT commit real passwords here.
+  # Option 1: pass at install time
+  #   --set auth.rootPassword=<your-password>
+  # Option 2: use an existing K8s secret
+  existingSecret: "mongodb-auth"
+  # The secret must have key "mongodb-root-password"
+  # Create it with:
+  #   kubectl create secret generic mongodb-auth \
+  #     --namespace=jupyterhub \
+  #     --from-literal=mongodb-root-password='<your-password>'
+  # No need for auth.databases/auth.usernames — logService connects as root
+  # and MongoDB auto-creates the "loggedData" database on first write.
+
+persistence:
+  enabled: true
+  storageClass: managed-csi
+  size: 5Gi
+
+resources:
+  limits:
+    memory: 2Gi
+    cpu: "1"
+  requests:
+    memory: 512Mi
+    cpu: 250m
+
+# Match the WiredTiger cache setting from docker-compose
+extraFlags:
+  - "--wiredTigerCacheSizeGB=0.5"

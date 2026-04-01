@@ -1,0 +1,23 @@
+# service.yaml.template — Internal endpoint for the Flask log service
+#
+# This is an envsubst template. Do NOT edit service.yaml directly — it is generated.
+#
+# Usage:
+#   envsubst < service.yaml.template > service.yaml
+#   kubectl apply -f service.yaml
+#
+# Required environment variables (set in env.deploy):
+#   K8S_NAMESPACE
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-logservice
+  namespace: ${K8S_NAMESPACE}
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-logservice
+  ports:
+    - port: 10101
+      targetPort: 10101

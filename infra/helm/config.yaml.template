@@ -1,0 +1,63 @@
+# config.yaml.template — JupyterHub Helm chart values
+#
+# This is an envsubst template. Do NOT edit config.yaml directly — it is generated.
+#
+# Usage:
+#   envsubst < config.yaml.template > config.yaml
+#   helm upgrade --install jupyterhub jupyterhub/jupyterhub -f config.yaml -n ${K8S_NAMESPACE}
+#
+# Required environment variables (set in env.deploy):
+#   LOAD_BALANCER_IP, DOMAIN, CONTACT_EMAIL,
+#   OAUTH_ADMIN_USER, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET,
+#   JUPYTERHUB_ASKLLM_API_TOKEN, ACR_LOGIN_SERVER
+#
+# Chart config reference:   https://zero-to-jupyterhub.readthedocs.io/en/stable/resources/reference.html
+# Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+
+proxy:
+  service:
+    loadBalancerIP: ${LOAD_BALANCER_IP}
+  https:
+    enabled: true
+    hosts:
+      - ${DOMAIN}
+    letsencrypt:
+      contactEmail: ${CONTACT_EMAIL}
+
+hub:
+  config:
+    GitHubOAuthenticator:
+      admin_users:
+        - ${OAUTH_ADMIN_USER}
+      client_id: ${OAUTH_CLIENT_ID}
+      client_secret: ${OAUTH_CLIENT_SECRET}
+      oauth_callback_url: https://${DOMAIN}/hub/oauth_callback
+    JupyterHub:
+      authenticator_class: github
+  services:
+    askLLM:
+      # Flask logService running as a separate K8s deployment
+      # The service name "flask-logservice" must match the K8s Service in flask-logservice/service.yaml
+      url: "http://flask-logservice:10101"
+      # Must match the JUPYTERHUB_API_TOKEN in the flask-logservice deployment
+      api_token: "${JUPYTERHUB_ASKLLM_API_TOKEN}"
+
+singleuser:
+  image:
+    name: ${ACR_LOGIN_SERVER}/jupyterlab-students
+    tag: latest
+  cpu:
+    limit: .5
+    guarantee: .5
+  storage:
+    capacity: 2Gi
+  extraFiles:
+    jupyter_notebook_config.json:
+      mountPath: /etc/jupyter/jupyter_notebook_config.json
+      data:
+        MappingKernelManager:
+          cull_idle_timeout: 1200
+          cull_interval: 120
+          cull_connected: true
+          cull_busy: false
+  cmd: null

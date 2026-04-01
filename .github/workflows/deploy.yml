@@ -1,0 +1,216 @@
+# deploy.yml — Full pipeline: Terraform → Build images → Deploy to AKS
+#
+# Trigger: manual only (workflow_dispatch)
+#
+# Required GitHub Secrets:
+#   AZURE_CREDENTIALS          - Service principal JSON (az ad sp create-for-rbac --sdk-auth)
+#   OPENAI_API_KEY             - OpenAI API key
+#   MONGO_USERNAME             - MongoDB root username
+#   MONGO_PASSWORD             - MongoDB root password
+#   FLASK_SECRET_KEY           - Flask session key (openssl rand -hex 32)
+#   JUPYTERHUB_ASKLLM_API_TOKEN - Shared token between Hub and Flask (openssl rand -hex 32)
+#   OAUTH_CLIENT_ID     - GitHub OAuth app client ID
+#   OAUTH_CLIENT_SECRET - GitHub OAuth app client secret
+#
+# Required GitHub Variables (Settings → Variables):
+#   DOMAIN                     - Your domain (e.g., example.com)
+#   CONTACT_EMAIL              - Email for LetsEncrypt
+#   OAUTH_ADMIN_USER          - GitHub username for JupyterHub admin
+#   LOAD_BALANCER_IP           - Static IP (optional, leave empty for dynamic)
+#   TF_PROJECT_NAME            - Terraform project name (e.g., my-jupyterhub)
+#   TF_LOCATION                - Azure region (e.g., westeurope)
+#   TF_ENVIRONMENT             - Environment (e.g., dev)
+#   TF_VM_SIZE                 - AKS VM size (e.g., Standard_B2s_v2)
+#   TF_NODE_MIN_COUNT          - Min autoscale nodes (e.g., 1)
+#   TF_NODE_MAX_COUNT          - Max autoscale nodes (e.g., 3)
+#   TF_ACR_SKU                 - ACR SKU (e.g., Basic)
+#   K8S_NAMESPACE              - Kubernetes namespace (e.g., jupyterhub)
+
+name: Deploy to AKS
+
+on:
+  workflow_dispatch:
+
+env:
+  K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE || 'jupyterhub' }}
+
+jobs:
+  terraform:
+    name: Provision Azure Infrastructure
+    runs-on: ubuntu-latest
+    outputs:
+      acr_login_server: ${{ steps.tf_output.outputs.acr_login_server }}
+      acr_admin_username: ${{ steps.tf_output.outputs.acr_admin_username }}
+      acr_admin_password: ${{ steps.tf_output.outputs.acr_admin_password }}
+      aks_cluster_name: ${{ steps.tf_output.outputs.aks_cluster_name }}
+      resource_group_name: ${{ steps.tf_output.outputs.resource_group_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Create tfvars
+        working-directory: infra/terraform
+        run: |
+          cat > terraform.tfvars <<EOF
+          project_name   = "${{ vars.TF_PROJECT_NAME }}"
+          location       = "${{ vars.TF_LOCATION }}"
+          environment    = "${{ vars.TF_ENVIRONMENT }}"
+          vm_size        = "${{ vars.TF_VM_SIZE }}"
+          node_min_count = ${{ vars.TF_NODE_MIN_COUNT || '1' }}
+          node_max_count = ${{ vars.TF_NODE_MAX_COUNT || '3' }}
+          acr_sku        = "${{ vars.TF_ACR_SKU || 'Basic' }}"
+          EOF
+
+      - name: Terraform Plan
+        working-directory: infra/terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Capture Terraform Outputs
+        id: tf_output
+        working-directory: infra/terraform
+        run: |
+          echo "acr_login_server=$(terraform output -raw acr_login_server)" >> "$GITHUB_OUTPUT"
+          echo "acr_admin_username=$(terraform output -raw acr_admin_username)" >> "$GITHUB_OUTPUT"
+          echo "acr_admin_password=$(terraform output -raw acr_admin_password)" >> "$GITHUB_OUTPUT"
+          echo "aks_cluster_name=$(terraform output -raw aks_cluster_name)" >> "$GITHUB_OUTPUT"
+          echo "resource_group_name=$(terraform output -raw resource_group_name)" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to ACR
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ needs.terraform.outputs.acr_login_server }}
+          username: ${{ needs.terraform.outputs.acr_admin_username }}
+          password: ${{ needs.terraform.outputs.acr_admin_password }}
+
+      - name: Build & push JupyterHub image
+        run: |
+          docker build -t ${{ needs.terraform.outputs.acr_login_server }}/jupyterhub:latest .
+          docker push ${{ needs.terraform.outputs.acr_login_server }}/jupyterhub:latest
+
+      - name: Build & push Flask logService image
+        run: |
+          docker build -f infra/docker/Dockerfile.flask \
+            -t ${{ needs.terraform.outputs.acr_login_server }}/flask-logservice:latest .
+          docker push ${{ needs.terraform.outputs.acr_login_server }}/flask-logservice:latest
+
+      # NOTE: The student notebook image must be built and pushed separately.
+      # See: https://github.com/COLAPS-Research/aipromptextensions
+
+  deploy:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: [terraform, build-and-push]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ needs.terraform.outputs.resource_group_name }} \
+            --name ${{ needs.terraform.outputs.aks_cluster_name }} \
+            --overwrite-existing
+
+      - name: Create namespace
+        run: |
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create K8s secrets
+        run: |
+          # jupyterhub-secrets (used by Flask logService)
+          kubectl create secret generic jupyterhub-secrets \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --from-literal=openai-api-key='${{ secrets.OPENAI_API_KEY }}' \
+            --from-literal=mongo-username='${{ secrets.MONGO_USERNAME }}' \
+            --from-literal=mongo-password='${{ secrets.MONGO_PASSWORD }}' \
+            --from-literal=flask-secret-key='${{ secrets.FLASK_SECRET_KEY }}' \
+            --from-literal=jupyterhub-askllm-api-token='${{ secrets.JUPYTERHUB_ASKLLM_API_TOKEN }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # mongodb-auth (used by Bitnami MongoDB Helm chart)
+          kubectl create secret generic mongodb-auth \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --from-literal=mongodb-root-password='${{ secrets.MONGO_PASSWORD }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy MongoDB
+        run: |
+          helm upgrade --install mongodb oci://registry-1.docker.io/bitnamicharts/mongodb \
+            -f infra/helm/mongodb-values.yaml \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --wait --timeout 5m
+
+      - name: Generate Helm config from template
+        env:
+          ACR_LOGIN_SERVER: ${{ needs.terraform.outputs.acr_login_server }}
+          DOMAIN: ${{ vars.DOMAIN }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          LOAD_BALANCER_IP: ${{ vars.LOAD_BALANCER_IP }}
+          OAUTH_ADMIN_USER: ${{ vars.OAUTH_ADMIN_USER }}
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          JUPYTERHUB_ASKLLM_API_TOKEN: ${{ secrets.JUPYTERHUB_ASKLLM_API_TOKEN }}
+        run: |
+          envsubst < infra/helm/config.yaml.template > infra/helm/config.yaml
+
+      - name: Deploy JupyterHub
+        run: |
+          helm repo add jupyterhub https://hub.jupyter.org/helm-chart/
+          helm repo update
+          helm upgrade --install jupyterhub jupyterhub/jupyterhub \
+            -f infra/helm/config.yaml \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --wait --timeout 10m
+
+      - name: Generate and deploy Flask logService
+        env:
+          ACR_LOGIN_SERVER: ${{ needs.terraform.outputs.acr_login_server }}
+          K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
+        run: |
+          envsubst < infra/k8s/flask-logservice/deployment.yaml.template > infra/k8s/flask-logservice/deployment.yaml
+          envsubst < infra/k8s/flask-logservice/service.yaml.template > infra/k8s/flask-logservice/service.yaml
+          kubectl apply -f infra/k8s/flask-logservice/service.yaml
+          kubectl apply -f infra/k8s/flask-logservice/deployment.yaml
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=flask-logservice -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          echo ""
+          echo "Pod status:"
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }}
+          echo ""
+          echo "Services:"
+          kubectl get svc -n ${{ env.K8S_NAMESPACE }}
+          echo ""
+          echo "External IP:"
+          kubectl get svc proxy-public -n ${{ env.K8S_NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+          echo ""

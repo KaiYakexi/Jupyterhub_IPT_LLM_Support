@@ -10,3 +10,13 @@ letsencrypt/
 *.log
 *.sqlite
 secrets/
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/terraform.tfvars
+terraform.tfstate
+
+# Generated from templates at deploy time (do not commit)
+infra/helm/config.yaml
+infra/k8s/flask-logservice/deployment.yaml
+infra/k8s/flask-logservice/service.yaml

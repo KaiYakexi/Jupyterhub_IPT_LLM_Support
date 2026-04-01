@@ -1,3 +1,5 @@
+# This compose file is only for development purposes, use docker-compose.prod.yml for production!
+
 services:
   docker-socket-proxy:
     image: tecnativa/docker-socket-proxy:0.3
@@ -61,8 +63,6 @@ volumes:
 networks:
   backend:
     name: backend
-    internal: true
   students:
     name: students
     driver: bridge
-    internal: true
