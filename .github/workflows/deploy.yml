@@ -2,9 +2,11 @@
 #
 # Trigger: manual only (workflow_dispatch)
 #
-# Required GitHub Secrets (9):
-#   AZURE_CLIENT_ID             - Service principal appId
-#   AZURE_CLIENT_SECRET         - Service principal password
+# Auth: OIDC federated credentials (no password needed)
+# Setup: see infra/DEPLOYMENT_GUIDE.md Step 2
+#
+# Required GitHub Secrets (8):
+#   AZURE_CLIENT_ID             - App registration client ID
 #   AZURE_TENANT_ID             - Azure AD tenant ID
 #   AZURE_SUBSCRIPTION_ID       - Azure subscription ID
 #   OPENAI_API_KEY              - OpenAI API key
@@ -26,6 +28,10 @@ name: Deploy to AKS
 
 on:
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   # Configurable (with defaults)
@@ -59,14 +65,13 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Set Terraform auth env vars
         run: |
           echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> "$GITHUB_ENV"
-          echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> "$GITHUB_ENV"
           echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> "$GITHUB_ENV"
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> "$GITHUB_ENV"
+          echo "ARM_USE_OIDC=true" >> "$GITHUB_ENV"
 
       - name: Bootstrap Terraform state storage
         run: |
@@ -105,7 +110,8 @@ jobs:
             -backend-config="resource_group_name=${{ env.TF_STATE_RG }}" \
             -backend-config="storage_account_name=${{ env.TF_STATE_SA }}" \
             -backend-config="container_name=${{ env.TF_STATE_CONTAINER }}" \
-            -backend-config="key=terraform.tfstate"
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="use_oidc=true"
 
       - name: Create tfvars
         working-directory: infra/terraform
@@ -179,7 +185,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Get AKS Credentials
         run: |
