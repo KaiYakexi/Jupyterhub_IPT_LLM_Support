@@ -26,6 +26,9 @@
 #   TF_NODE_MAX_COUNT          - Max autoscale nodes (e.g., 3)
 #   TF_ACR_SKU                 - ACR SKU (e.g., Basic)
 #   K8S_NAMESPACE              - Kubernetes namespace (e.g., jupyterhub)
+#   TF_STATE_RESOURCE_GROUP    - Resource group for Terraform state storage (e.g., rg-tfstate)
+#   TF_STATE_STORAGE_ACCOUNT   - Storage account for Terraform state (e.g., sttfstatejupyterhub)
+#   TF_STATE_CONTAINER         - Blob container name (e.g., tfstate)
 
 name: Deploy to AKS
 
@@ -64,6 +67,40 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Bootstrap Terraform state storage
+        run: |
+          RG="${{ secrets.TF_STATE_RESOURCE_GROUP }}"
+          SA="${{ secrets.TF_STATE_STORAGE_ACCOUNT }}"
+          CONTAINER="${{ secrets.TF_STATE_CONTAINER }}"
+          LOCATION="${{ secrets.TF_LOCATION }}"
+
+          # Create resource group for state if it doesn't exist
+          az group create --name "$RG" --location "$LOCATION" --output none 2>/dev/null || true
+
+          # Create storage account if it doesn't exist
+          az storage account create \
+            --name "$SA" \
+            --resource-group "$RG" \
+            --location "$LOCATION" \
+            --sku Standard_LRS \
+            --kind StorageV2 \
+            --output none 2>/dev/null || true
+
+          # Create blob container if it doesn't exist
+          az storage container create \
+            --name "$CONTAINER" \
+            --account-name "$SA" \
+            --auth-mode login \
+            --output none 2>/dev/null || true
+
+          # Grant the service principal access to read/write state blobs
+          SA_ID=$(az storage account show --name "$SA" --resource-group "$RG" --query id -o tsv)
+          az role assignment create \
+            --role "Storage Blob Data Contributor" \
+            --assignee "${{ secrets.AZURE_CLIENT_ID }}" \
+            --scope "$SA_ID" \
+            --output none 2>/dev/null || true
+
       - name: Terraform Init
         working-directory: infra/terraform
         env:
@@ -71,7 +108,13 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="use_oidc=true"
 
       - name: Create tfvars
         working-directory: infra/terraform
@@ -85,6 +128,51 @@ jobs:
           node_max_count = ${{ secrets.TF_NODE_MAX_COUNT || '3' }}
           acr_sku        = "${{ secrets.TF_ACR_SKU || 'Basic' }}"
           EOF
+
+      - name: Import existing resources (safe to re-run)
+        working-directory: infra/terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_USE_OIDC: "true"
+        run: |
+          SUB_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          PROJECT="${{ secrets.TF_PROJECT_NAME }}"
+          ENV="${{ secrets.TF_ENVIRONMENT }}"
+          RG="rg-${PROJECT}-${ENV}"
+          ACR=$(echo "${PROJECT}${ENV}" | tr -d '-')
+
+          import_if_needed() {
+            local addr="$1"
+            local id="$2"
+            # Skip if already in state
+            if terraform state show "$addr" &>/dev/null; then
+              echo "✓ $addr already in state"
+              return
+            fi
+            # Try to import; ignore if resource doesn't exist in Azure
+            if terraform import "$addr" "$id" 2>&1; then
+              echo "✓ Imported $addr"
+            else
+              echo "⊘ $addr not found in Azure, will be created"
+            fi
+          }
+
+          import_if_needed azurerm_resource_group.main \
+            "/subscriptions/${SUB_ID}/resourceGroups/${RG}"
+
+          import_if_needed azurerm_container_registry.main \
+            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.ContainerRegistry/registries/${ACR}"
+
+          import_if_needed azurerm_virtual_network.main \
+            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Network/virtualNetworks/vnet-${PROJECT}-${ENV}"
+
+          import_if_needed azurerm_subnet.aks \
+            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Network/virtualNetworks/vnet-${PROJECT}-${ENV}/subnets/snet-aks-${PROJECT}-${ENV}"
+
+          import_if_needed azurerm_kubernetes_cluster.main \
+            "/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.ContainerService/managedClusters/aks-${PROJECT}-${ENV}"
 
       - name: Terraform Plan
         working-directory: infra/terraform
