@@ -2,10 +2,13 @@
 #
 # Trigger: manual only (workflow_dispatch)
 #
-# Required GitHub Secrets (6):
-#   AZURE_CREDENTIALS           - Service principal JSON (az ad sp create-for-rbac --json-auth)
+# Required GitHub Secrets (9):
+#   AZURE_CLIENT_ID             - Service principal appId
+#   AZURE_CLIENT_SECRET         - Service principal password
+#   AZURE_TENANT_ID             - Azure AD tenant ID
+#   AZURE_SUBSCRIPTION_ID       - Azure subscription ID
 #   OPENAI_API_KEY              - OpenAI API key
-#   MONGO_PASSWORD              - MongoDB root password (pick one or: openssl rand -base64 24)
+#   MONGO_PASSWORD              - MongoDB root password (openssl rand -base64 24)
 #   OAUTH_CLIENT_ID             - GitHub OAuth app client ID
 #   OAUTH_CLIENT_SECRET         - GitHub OAuth app client secret
 #   JUPYTERHUB_ASKLLM_API_TOKEN - Shared token (openssl rand -hex 32)
@@ -53,14 +56,17 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      - name: Parse Azure credentials for Terraform
+      - name: Set Terraform auth env vars
         run: |
-          echo "ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientId)" >> "$GITHUB_ENV"
-          echo "ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientSecret)" >> "$GITHUB_ENV"
-          echo "ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .tenantId)" >> "$GITHUB_ENV"
-          echo "ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)" >> "$GITHUB_ENV"
+          echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> "$GITHUB_ENV"
+          echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> "$GITHUB_ENV"
+          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> "$GITHUB_ENV"
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> "$GITHUB_ENV"
 
       - name: Bootstrap Terraform state storage
         run: |
@@ -170,7 +176,10 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Get AKS Credentials
         run: |
