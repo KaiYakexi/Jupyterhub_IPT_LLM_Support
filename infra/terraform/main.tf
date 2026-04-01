@@ -22,6 +22,15 @@ provider "azurerm" {
   # In CI/CD (Phase 8), we'll use a service principal instead.
 }
 
+# Import the existing resource group into Terraform state.
+# This block can be removed after the first successful apply.
+import {
+  to = azurerm_resource_group.main
+  id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/rg-${var.project_name}-${var.environment}"
+}
+
+data "azurerm_subscription" "current" {}
+
 # A resource group is like a folder - everything in your project goes inside it.
 # Deleting the resource group deletes everything in it, which is great for cleanup.
 resource "azurerm_resource_group" "main" {
