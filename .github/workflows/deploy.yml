@@ -3,7 +3,9 @@
 # Trigger: manual only (workflow_dispatch)
 #
 # Required GitHub Secrets:
-#   AZURE_CREDENTIALS          - Service principal JSON (az ad sp create-for-rbac --sdk-auth)
+#   AZURE_CLIENT_ID            - App registration client ID
+#   AZURE_TENANT_ID            - Azure AD tenant ID
+#   AZURE_SUBSCRIPTION_ID      - Azure subscription ID
 #   OPENAI_API_KEY             - OpenAI API key
 #   MONGO_USERNAME             - MongoDB root username
 #   MONGO_PASSWORD             - MongoDB root password
@@ -12,7 +14,6 @@
 #   OAUTH_CLIENT_ID     - GitHub OAuth app client ID
 #   OAUTH_CLIENT_SECRET - GitHub OAuth app client secret
 #
-# Required GitHub Variables (Settings → Variables):
 #   DOMAIN                     - Your domain (e.g., example.com)
 #   CONTACT_EMAIL              - Email for LetsEncrypt
 #   OAUTH_ADMIN_USER          - GitHub username for JupyterHub admin
@@ -31,8 +32,12 @@ name: Deploy to AKS
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
-  K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE || 'jupyterhub' }}
+  K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'jupyterhub' }}
 
 jobs:
   terraform:
@@ -50,7 +55,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -65,13 +72,13 @@ jobs:
         working-directory: infra/terraform
         run: |
           cat > terraform.tfvars <<EOF
-          project_name   = "${{ vars.TF_PROJECT_NAME }}"
-          location       = "${{ vars.TF_LOCATION }}"
-          environment    = "${{ vars.TF_ENVIRONMENT }}"
-          vm_size        = "${{ vars.TF_VM_SIZE }}"
-          node_min_count = ${{ vars.TF_NODE_MIN_COUNT || '1' }}
-          node_max_count = ${{ vars.TF_NODE_MAX_COUNT || '3' }}
-          acr_sku        = "${{ vars.TF_ACR_SKU || 'Basic' }}"
+          project_name   = "${{ secrets.TF_PROJECT_NAME }}"
+          location       = "${{ secrets.TF_LOCATION }}"
+          environment    = "${{ secrets.TF_ENVIRONMENT }}"
+          vm_size        = "${{ secrets.TF_VM_SIZE }}"
+          node_min_count = ${{ secrets.TF_NODE_MIN_COUNT || '1' }}
+          node_max_count = ${{ secrets.TF_NODE_MAX_COUNT || '3' }}
+          acr_sku        = "${{ secrets.TF_ACR_SKU || 'Basic' }}"
           EOF
 
       - name: Terraform Plan
@@ -130,7 +137,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Get AKS Credentials
         run: |
@@ -171,10 +180,10 @@ jobs:
       - name: Generate Helm config from template
         env:
           ACR_LOGIN_SERVER: ${{ needs.terraform.outputs.acr_login_server }}
-          DOMAIN: ${{ vars.DOMAIN }}
-          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
-          LOAD_BALANCER_IP: ${{ vars.LOAD_BALANCER_IP }}
-          OAUTH_ADMIN_USER: ${{ vars.OAUTH_ADMIN_USER }}
+          DOMAIN: ${{ secrets.DOMAIN }}
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+          LOAD_BALANCER_IP: ${{ secrets.LOAD_BALANCER_IP }}
+          OAUTH_ADMIN_USER: ${{ secrets.OAUTH_ADMIN_USER }}
           OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
           OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
           JUPYTERHUB_ASKLLM_API_TOKEN: ${{ secrets.JUPYTERHUB_ASKLLM_API_TOKEN }}

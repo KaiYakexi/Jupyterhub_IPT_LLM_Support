@@ -58,19 +58,43 @@ az account list -o table
 az account set --subscription "<subscription-id>"
 ```
 
-### Create a Service Principal for GitHub Actions
+### Create a Service Principal with OIDC for GitHub Actions
 
-GitHub Actions needs credentials to interact with Azure:
+GitHub Actions authenticates to Azure using OpenID Connect (OIDC) federated credentials — no long-lived secrets required.
+
+**1. Create an App Registration and Service Principal:**
 
 ```bash
-az ad sp create-for-rbac \
-  --name "github-actions-jupyterhub" \
+# Create the app registration
+az ad app create --display-name "github-actions-jupyterhub"
+
+# Note the appId from the output, then create a service principal
+az ad sp create --id <appId>
+
+# Assign Contributor role to the service principal
+az role assignment create \
+  --assignee <appId> \
   --role contributor \
-  --scopes /subscriptions/<subscription-id> \
-  --sdk-auth
+  --scope /subscriptions/<subscription-id>
 ```
 
-Save the JSON output — you'll add it as a GitHub secret in Step 5.
+**2. Add a Federated Credential for GitHub Actions:**
+
+```bash
+az ad app federated-credential create --id <appId> --parameters '{
+  "name": "github-actions-deploy",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:<your-github-username>/<your-repo-name>:ref:refs/heads/main",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
+```
+
+> **Note:** If you also want to trigger from other branches or events, add additional federated credentials with the appropriate `subject` (e.g., `repo:owner/repo:environment:production`).
+
+**3. Note the following values for Step 5:**
+- **Application (client) ID** — from the app registration
+- **Directory (tenant) ID** — from Azure AD → Overview
+- **Subscription ID** — from `az account show --query id -o tsv`
 
 ---
 
@@ -116,27 +140,24 @@ terraform apply
 
 ---
 
-## Step 5: Configure GitHub Secrets and Variables
+## Step 5: Configure GitHub Secrets
 
-Go to your GitHub repo → **Settings → Secrets and variables → Actions**.
+Go to your GitHub repo → **Settings → Secrets and variables → Actions → Secrets**.
 
-### Secrets (sensitive values)
+All configuration is stored as repository secrets.
 
-| Secret Name | Value | How to generate |
+| Secret Name | Example Value | How to generate |
 |---|---|---|
-| `AZURE_CREDENTIALS` | Service principal JSON from Step 2 | `az ad sp create-for-rbac --sdk-auth` |
-| `OPENAI_API_KEY` | Your OpenAI API key | [OpenAI dashboard](https://platform.openai.com/api-keys) |
-| `MONGO_USERNAME` | MongoDB root username | Choose one (e.g., `root`) |
-| `MONGO_PASSWORD` | MongoDB root password | `openssl rand -base64 24` |
-| `FLASK_SECRET_KEY` | Flask session signing key | `openssl rand -hex 32` |
-| `JUPYTERHUB_ASKLLM_API_TOKEN` | Shared Hub ↔ Flask token | `openssl rand -hex 32` |
-| `OAUTH_CLIENT_ID` | From Step 3 | GitHub OAuth App page |
-| `OAUTH_CLIENT_SECRET` | From Step 3 | GitHub OAuth App page |
-
-### Variables (non-sensitive configuration)
-
-| Variable Name | Example Value | Description |
-|---|---|---|
+| `AZURE_CLIENT_ID` | `xxxxxxxx-xxxx-...` | App registration client ID (Step 2) |
+| `AZURE_TENANT_ID` | `xxxxxxxx-xxxx-...` | Azure AD tenant ID (Step 2) |
+| `AZURE_SUBSCRIPTION_ID` | `xxxxxxxx-xxxx-...` | `az account show --query id -o tsv` |
+| `OPENAI_API_KEY` | `sk...` | [OpenAI dashboard](https://platform.openai.com/api-keys) |
+| `MONGO_USERNAME` | `myUsername` | Choose one |
+| `MONGO_PASSWORD` | *(random)* | `openssl rand -base64 24` |
+| `FLASK_SECRET_KEY` | *(random)* | `openssl rand -hex 32` |
+| `JUPYTERHUB_ASKLLM_API_TOKEN` | *(random)* | `openssl rand -hex 32` |
+| `OAUTH_CLIENT_ID` | *(from Step 3)* | GitHub OAuth App page |
+| `OAUTH_CLIENT_SECRET` | *(from Step 3)* | GitHub OAuth App page |
 | `DOMAIN` | `example.com` | Your domain name |
 | `CONTACT_EMAIL` | `admin@example.com` | LetsEncrypt contact email |
 | `OAUTH_ADMIN_USER` | `your-github-username` | JupyterHub admin user |
@@ -160,7 +181,7 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions**.
 The pipeline runs three jobs in sequence:
 
 ### Job 1: Provision Azure Infrastructure
-- Initializes Terraform and creates `terraform.tfvars` from GitHub Variables
+- Initializes Terraform and creates `terraform.tfvars` from GitHub Secrets
 - Runs `terraform plan` and `terraform apply`
 - Creates: Resource Group, VNet + Subnet, AKS Cluster, ACR
 - Outputs ACR login server and AKS cluster name for subsequent jobs
