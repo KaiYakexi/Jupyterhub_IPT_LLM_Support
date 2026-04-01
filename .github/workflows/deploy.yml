@@ -79,7 +79,7 @@ jobs:
           LOCATION="${{ env.TF_LOCATION }}"
           RG="rg-${PROJECT}-tfstate"
           # Storage account: alphanumeric only, max 24 chars
-          SA="st$(echo "${PROJECT}" | tr -d '-' | cut -c1-16)tfstate"
+          SA="st$(echo "${PROJECT}" | tr -d '-' | cut -c1-15)tfstate"
           CONTAINER="tfstate"
 
           az group create --name "$RG" --location "$LOCATION" --output none 2>/dev/null || true
