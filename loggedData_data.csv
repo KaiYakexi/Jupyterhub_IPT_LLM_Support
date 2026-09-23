@@ -1,0 +1,331 @@
+user,receptionTS,KC,cellIdentifier,supportType,errorName,errorMessage,sourceCode,hintCounter,LLMResponse,predictedProbability,inGreyArea,greyAreaZone,feedbackWithheld
+student1,1.788693926760158e+09,,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,,,,
+student1,1.788693989703822e+09,,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",0,"```python
+print(""Python is fun"")
+
+First, check if every opening parenthesis has a closing one.
+
+Second, make sure the end of each statement is complete.
+
+Third, try running the code after making small corrections.
+```",,,,
+student1,1.788693999646049e+09,,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",1,"```python
+print(""Good morning"")
+
+Step-by-step description:
+Step 1: Notice that a print statement is being used to display text.
+Step 2: Begin the print function with an opening parenthesis.
+Step 3: Type the text you want in double quotation marks.
+Step 4: Close the print function with a closing parenthesis.
+Step 5: Make sure both parentheses are present so there is no incomplete input error.
+```",,,,
+student1,1.788694005178381e+09,,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",2,"```python
+print(""Good morning, everyone!"")
+
+Step-by-step:
+1. Type print.
+2. Open a parenthesis (.
+3. Add a string inside quotation marks: ""Good morning, everyone!"".
+4. Close the parenthesis ).
+5. Run the code.
+```",,,,
+student1,1.788699055518562e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.5,true,,false
+student1,1.788699124596489e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.5,true,,false
+student1,1.78869912739531e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.5,true,,false
+student1,1.788699130818698e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.5,true,,false
+student1,1.788699221936109e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",0,"```python
+print(""Python"")
+
+The text inside the parentheses starts with a quote and also ends with a matching quote, and the parentheses are closed. This makes sure Python knows where the code starts and ends.
+```",0.5,true,,false
+student1,1.788699495941058e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",1,"```python
+print(""Python is fun!"")
+
+Step-by-step description:
+Step 1: Start the line with the print function.
+Step 2: Open the parentheses after print.
+Step 3: Type your message inside quotation marks.
+Step 4: Close the parentheses at the end.
+Step 5: Check that all parentheses are correctly paired.
+```",0.5,true,,false
+student1,1.788699500141937e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",2,"```python
+print(""Welcome to Python!"")
+
+Step-by-step:
+Step 1: Write the print statement.
+Step 2: Make sure to open and close the parentheses.
+Step 3: Place the text you want to display inside quotes inside the parentheses.
+Step 4: Run the code to display the message.
+```",0.5,true,,false
+student1,1.788699504407459e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.5,true,,false
+student1,1.788701713955781e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",0,"```python
+print(""Python is fun!"")
+
+First, write print and an opening parenthesis.
+Next, add your message in quotes.
+Finally, close with a parenthesis.
+```",0.5,true,,false
+student1,1.788701719572135e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",1,"```python
+print(""Python is fun!"")
+
+Step-by-step description:
+1. Write the print statement to display the message.
+2. Begin the statement with print( and open a parenthesis.
+3. Use quotation marks around the text you want to print.
+4. Make sure to close the quotation marks properly.
+5. End the statement by closing the parenthesis.
+```",0.46879062662624377,true,,false
+student1,1.788701725269448e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",2,"```python
+print(""Welcome to Python!"")
+
+Step-by-step description:
+1. The print function is used to display text on the screen.
+2. The text you want to display should be inside quotation marks.
+3. Make sure to close the parentheses after the quotation marks.
+4. Running this line will print the message to the output.
+```",0.4050232970923834,true,,false
+student1,1.788701728635531e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,No solution available for this exercise.,0.3350567489964132,true,,false
+student1,1.788701744362888e+09,OutputBasic,w1e5s3,workedExample,_IncompleteInputError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}""",0,,0.2701693321128471,false,,true
+student1,1.788701775142131e+09,ArithmeticOperators,w1e4s1,workedExample,_IncompleteInputError,,"# Your code here
+print(3.14159* 10**2
+",0,"```python
+print(2 + 3)
+
+Step 1: Make sure that every opening parenthesis has a matching closing parenthesis.
+Step 2: Check that all your expressions are complete before running the code.
+Step 3: Run the code again after making corrections.
+```",0.4763473391490462,true,,false
+student1,1.788701807499824e+09,OutputBasic,w1e5s3,workedExample,_IncompleteInputError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}""",1,,0.20691439248892768,false,,true
+student1,1.7887018148982e+09,OutputBasic,w1e5s3,workedExample,_IncompleteInputError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}""",2,,0.16299561805805865,false,,true
+student1,1.788701819523334e+09,OutputBasic,w1e5s3,workedExample,_IncompleteInputError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}""",3,,0.12785147715240255,false,,true
+student1,1.78870182959177e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,,0.10012831715955177,false,,true
+student1,1.788702200143431e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",3,,0.07843036646463933,false,,true
+student2,1.788702577936776e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",0,"```python
+print(""Python is fun!"")
+
+First, start with the word print.  
+Next, put your message inside quotes.  
+Finally, make sure you close the parentheses at the end.
+```",0.4635294870244631,true,,false
+student2,1.788702586524131e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",1,"```python
+print(""Python is fun""
+
+Step-by-step description:
+Step 1: Look at the line of code and identify any missing symbols.
+Step 2: Notice that there is an opening parenthesis after print but no closing parenthesis at the end.
+Step 3: The code will cause a syntax or incomplete input error because every opening parenthesis needs a matching closing parenthesis.
+Step 4: To fix the code, add a closing parenthesis at the end of the print statement: print(""Python is fun"")
+Step 5: Now, the code will run correctly and display the intended message.
+```",0.4147851679765046,true,,false
+student2,1.788702590451893e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",2,"```python
+print(""Good morning"")
+
+Step-by-step:
+Step 1: Start the print statement with print(.
+Step 2: Type the text you want to display inside quotes.
+Step 3: End the statement with a closing parenthesis ).
+```",0.35566083299933815,true,,false
+student2,1.788702603466424e+09,OutputBasic,w1e5s3,workedExample,NameError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",0,,0.29105202335341696,false,,true
+student2,1.78871017664462e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student2,1.788710179781012e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student2,1.788710192753712e+09,OutputBasic,w1e5s3,workedExample,SyntaxError,,"print(volume_sphere
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",0,"```python
+print(""Hello
+
+Step 1: Start writing a print statement.
+Step 2: Begin with an opening parenthesis.
+Step 3: Make sure your statement is complete and closed properly.
+Step 4: Run your code after checking parentheses.
+```",0.3848700710253997,true,in,false
+student2,1.788710204882445e+09,OutputBasic,w1e5s3,workedExample,SyntaxError,,"print(volume_sphere
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",1,,0.29865125890490596,false,below,true
+student2,1.788710284398426e+09,ArithmeticOperators,w1e2s1,workedExample,,,"# Your code
+print(((40 + 25) * 2) - 5)",0,,,,,
+student2,1.788710289004403e+09,ArithmeticOperators,w1e3s1,workedExample,,,"# Your code
+print(125 / 2)",0,,,,,
+student2,1.788710291718509e+09,ArithmeticOperators,w1e2s1,workedExample,,,"# Your code
+print(((40 + 25) * 2) - 5)",0,,,,,
+student2,1.78871029450861e+09,ArithmeticOperators,w1e2s1,workedExample,,,"# Your code
+print(((40 + 25) * 2) - 5)",0,,,,,
+student2,1.788710301748421e+09,ArithmeticOperators,w1e5s2,workedExample,SyntaxError,,volume_sphere: float = #Your solution here,0,,0.2542881558848454,false,below,true
+student2,1.788710313361087e+09,ArithmeticOperators,w1e5s2,workedExample,SyntaxError,,volume_sphere: float = #Your solution here,1,,0.22590514214490348,false,below,true
+student3,1.788712096759422e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.788712099025622e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.788712101299523e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.78871211066474e+09,OutputBasic,w1e5s3,workedExample,SyntaxError,,"print(volume_sphere
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",0,,2.41707308988582e-15,false,below,true
+student3,1.788713285382367e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.788713287659604e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.788713289936642e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.788713292445523e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,,,,
+student3,1.7887132999501e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",0,"```python
+print(""Goodbye"")
+
+Step 1: Look at how the parentheses are used.
+Step 2: Make sure every opening parenthesis has a matching closing parenthesis.
+Step 3: Try running the code after checking this.
+```",0.5822125707837075,true,in,false
+student3,1.788713310112196e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",1,,,,,
+student3,1.78871331265275e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",1,,,,,
+student3,1.788713316726515e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",1,"```python
+Worked-out example:
+
+print(""Welcome to Python"")
+
+Step-by-step description:
+
+Step 1: Start writing a print statement in Python by typing print(.
+Step 2: Open a pair of double quotes "" after the parenthesis to create a string.
+Step 3: Write your message inside the quotes.
+Step 4: Close the quotes and add a closing parenthesis ) to finish the statement.
+Step 5: Make sure both the opening ( and closing ) parenthesis are present to avoid errors.
+```",0.6234106614960166,true,in,false
+student3,1.788713325576647e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.788713337004859e+09,OutputBasic,w1e5s3,workedExample,NameError,,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",0,"```python
+x = 10
+print(x)
+
+Step 1: Assign a value to a variable.
+Step 2: Use print() to display the variable.
+```",0.53199694303677,true,in,false
+student3,1.788713393564087e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.788713395829342e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.788713397978759e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.788713399951267e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.788713402200063e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,,,,
+student3,1.78871340742953e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,,"# Your code here
+print(""Hello, world""",2,,0.8709053702721022,false,above,true
+student4,1.78871452671905e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,0.3617847237156648,true,in,
+student4,1.788714529268837e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,0.37754697330366604,true,in,
+student4,1.788714532831567e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,0.41774497957965673,true,in,
+student4,1.788714535206912e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,0.4867668661287415,true,in,
+student4,1.788714538412619e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",0,,0.5760334517958764,true,in,
+student4,1.78871454454302e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,"incomplete input (494625360.py, line 2)","# Your code here
+print(""Hello, world""",0,"```python
+print(""Python is fun"")
+
+Write out the print instruction. Make sure to check for matching opening and closing parentheses.
+```",0.5894594202817536,true,in,false
+student4,1.788714551965302e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",1,,0.42967023785726005,true,in,
+student4,1.788714554283768e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",1,,0.5275716948631867,true,in,
+student4,1.788714557950768e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,"incomplete input (494625360.py, line 2)","# Your code here
+print(""Hello, world""",1,"```python
+print(""Python is fun""
+
+Step 1: Look at the print statement and check the parentheses.
+Step 2: Notice that there is an opening parenthesis after print but no closing parenthesis at the end.
+Step 3: Add a closing parenthesis to the end so it matches the opening one.
+Step 4: The corrected code should be: print(""Python is fun"")
+```",0.6222279995276029,true,in,false
+student4,1.788714599670831e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,0.3837198094268942,true,in,
+student4,1.788714602054421e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",2,,0.5530562642412892,true,in,
+student4,1.788714605552543e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,"incomplete input (494625360.py, line 2)","# Your code here
+print(""Hello, world""",2,"```python
+Worked-out Example:
+
+print(""Good morning!"")
+
+Step-by-step Description:
+
+1. Start with the print function.
+2. Type the opening parenthesis ( to begin the argument.
+3. Add the text you want to display inside quotation marks.
+4. Close the parenthesis ) at the end of the statement.
+5. Run the code to see the output.
+```",0.6776593281028227,true,in,false
+student4,1.788714620549585e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.35343258358093455,true,in,
+student4,1.78871462323209e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.5973448545761407,true,in,
+student4,1.788714625474651e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.7328887925355477,false,above,
+student4,1.788714629258065e+09,OutputBasic,w1e1s1,workedExample,_IncompleteInputError,"incomplete input (494625360.py, line 2)","# Your code here
+print(""Hello, world""",3,"#### No hint needed right now
+Based on how you've been doing, you're likely able to work through this one on your own. Keep trying!",0.8083999789938187,false,above,true
+student4,1.788714639739674e+09,OutputBasic,w1e5s3,workedExample,NameError,name 'volume_sphere' is not defined,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",0,"```python
+x = 5
+print(x)
+
+Step 1: Assign a value to a variable.
+Step 2: Print the variable.
+```",0.3644969655267615,true,in,false
+student4,1.788714648144063e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.15246520229498067,false,below,
+student4,1.788714652499603e+09,OutputBasic,w1e5s3,workedExample,NameError,name 'volume_sphere' is not defined,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",1,"```python
+x = 7 * 3
+print(x)
+print(f""The result is {x:.2f}"")
+
+Step-by-step description:
+
+1. A variable 'x' is defined and assigned the result of multiplying 7 by 3.
+2. The value of 'x' is printed.
+3. The value of 'x' is formatted to show two decimal places in a message.
+4. By first defining 'x', there will be no NameError when printing its value.
+```",0.5743304757397515,true,in,false
+student4,1.788714660037077e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.17371059490202448,false,below,
+student4,1.788714662925564e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.6525352823704768,true,in,
+student4,1.788714665684192e+09,OutputBasic,w1e1s1,workedExample,,,"# Your code here
+print(""Hello, world"")",3,,0.4966151499251279,true,in,
+student4,1.788714672922745e+09,OutputBasic,w1e5s3,workedExample,NameError,name 'volume_sphere' is not defined,"print(volume_sphere)
+print(f""The volume of the sphere is {volume_sphere:.2f}"")",2,"#### No hint needed right now
+Based on how you've been doing, you're likely able to work through this one on your own. Keep trying!",0.784573666599882,false,above,true

@@ -51,13 +51,17 @@ services:
       - MONGO_INITDB_DATABASE=loggedData
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - GLIBC_TUNABLES=glibc.pthread.rseq=1
     volumes:
       - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
-      - ./mongodbvolume:/data/db
+      - mongo_data:/data/db
     networks:
       - backend
 
 volumes:
+  mongo_data:
+    name: jupyterhub_ipt_llm_support_mongo_data
+    external: true
   jupyterhub_data:
 
 networks:

@@ -22,6 +22,7 @@ from flask_limiter.util import get_remote_address
 
 
 from solutions import SOLUTIONS
+import afm
 
 TEMPLATE_DIR=Path("prompts")
 promptTemplates= {}
@@ -112,13 +113,16 @@ ALLOWED_SUPPORT_TYPES = {
 MAX_FIELD_LENGTHS = {
     "sourceCode": 10000,
     "traceback": 5000,
+    "errorMessage": 2000,
     "taskDescription": 5000,
     "errorName": 200,
     "customPrompt": 5000,
     "cellIdentifier": 200,
+    "KC": 200,
 }
 
 CELL_ID_PATTERN = re.compile(r'^[\w]+$')
+KC_PATTERN = re.compile(r'^[\w]+$')
 
 
 def validate_error_data(data):
@@ -135,6 +139,11 @@ def validate_error_data(data):
     if cell_id is not None:
         if not isinstance(cell_id, str) or not CELL_ID_PATTERN.match(cell_id):
             return None, "cellIdentifier must be alphanumeric/underscores only"
+
+    kc = data.get("KC")
+    if kc is not None:
+        if not isinstance(kc, str) or not KC_PATTERN.match(kc):
+            return None, "KC must be alphanumeric/underscores only"
 
     # hintCounter type safety
     hint_counter = data.get("hintCounter")
@@ -184,15 +193,39 @@ def sanitize_for_prompt(text, max_length=5000):
 
 # Fields allowed in MongoDB documents
 ALLOWED_STORAGE_FIELDS = {
-    "supportType", "cellIdentifier", "errorName", "traceback", "sourceCode",
-    "taskDescription", "hintCounter", "customPrompt", "user", "receptionTS",
-    "sendTS", "promptUsed", "LLMResponse", "eventType", "success",
+    "supportType", "cellIdentifier", "errorName", "errorMessage", "traceback",
+    "sourceCode", "taskDescription", "hintCounter", "customPrompt", "user",
+    "receptionTS", "sendTS", "promptUsed", "LLMResponse", "eventType",
+    "success", "KC", "feedbackWithheld", "predictedProbability", "inGreyArea",
+    "greyAreaZone",
 }
 
 
 def prepare_for_storage(data):
     """Whitelist fields before inserting into MongoDB."""
     return {k: v for k, v in data.items() if k in ALLOWED_STORAGE_FIELDS}
+
+
+# ── Grey Area withheld messages ─────────────────────────────────────────
+# These used to live only in the frontend (index.ts), which meant the exact
+# text shown to a student was never sent back to the server and never
+# ended up in loggedData_data -- only the feedbackWithheld flag was. Now
+# the backend is the single source of truth: askLLM() below puts one of
+# these into LLMResponse whenever feedback is withheld, so every attempt's
+# log record shows exactly what the student actually saw, same as when a
+# real LLM response is given.
+ABOVE_GREY_AREA_MESSAGE = (
+    "#### No hint needed right now\n"
+    "Based on how you've been doing, you're likely able to work through "
+    "this one on your own. Keep trying!"
+)
+BELOW_GREY_AREA_MESSAGE = (
+    "#### Let's take a step back\n"
+    "This specific hint isn't likely to help right now -- it looks like "
+    "this topic needs a bit more foundational review first. Take another "
+    "look at the lecture slides/tutorial for this topic, then come back "
+    "and try again."
+)
 
 
 # ── Prompt builders ────────────────────────────────────────────────────
@@ -432,7 +465,44 @@ def successLog(user):
         data['user']=user['name']
         data['receptionTS']=receptionTS
         db= get_db()
+
+        # Compute (and attach) the AFM probability BEFORE inserting into
+        # loggedData_data, so it's visible on success records too, not just
+        # failures. There's no Grey Area *decision* to make here (a
+        # successful run never shows a widget either way), but the
+        # probability itself is still meaningful to log: it's the model's
+        # belief about this student/KC right before this attempt, which
+        # then turned out correct.
+        support_type = data.get("supportType")
+        kc = data.get("KC")
+        cell_id = data.get("cellIdentifier")
+        grey_area_info = None
+        if afm.grey_area_applies(support_type, kc):
+            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
+            data['predictedProbability'] = grey_area_info['predictedProbability']
+            data['inGreyArea'] = grey_area_info['inGreyArea']
+            data['greyAreaZone'] = grey_area_info['zone']
+
         db.loggedData_data.insert_one(prepare_for_storage(data))
+
+        # Feed this attempt into the AFM training set too. Kept separate
+        # from loggedData_data since it's a different shape (one row per
+        # attempt, used only for model fitting).
+        if grey_area_info:
+            afm.log_afm_attempt(
+                db, student=user['name'], kc=kc,
+                cell_identifier=cell_id,
+                opportunity_count=grey_area_info['opportunityCount'], outcome=1,
+                predicted_probability=grey_area_info['predictedProbability'],
+                in_grey_area=grey_area_info['inGreyArea'],
+                feedback_given=False, timestamp=receptionTS,
+            )
+            # Immediately nudge this student's/KC's live parameters -- next
+            # attempt's probability reflects this one right away.
+            afm.update_model_online(
+                db, user['name'], kc, grey_area_info['opportunityCount'], outcome=1
+            )
+
         return jsonify({'success': True, 'message': 'Data uploaded successfully'})
     except Exception as e:
         logger.error("Error in successLog: %s", e)
@@ -453,16 +523,67 @@ def askLLM(user):
             return jsonify({'success': False, 'message': error}), 400
 
         receptionTS= datetime.datetime.now().timestamp()
-        promptUsed,LLMResponse=sendRequestToLLM(data)
+        db=get_db()
+
+        # ── Grey Area gate ──────────────────────────────────────────────
+        # Only applies to workedExample/instructionalText cells that carry
+        # a KC tag; every other supportType keeps its previous, ungated
+        # behavior. Outside the Grey Area means: skip the LLM call
+        # entirely (no hint, and no teacher-solution reveal either) --
+        # the student is assumed to either already have this KC, or be
+        # far enough from it that this specific hint mechanism isn't the
+        # right intervention.
+        support_type = data.get("supportType")
+        kc = data.get("KC")
+        feedback_withheld = False
+        grey_area_info = None
+        if afm.grey_area_applies(support_type, kc):
+            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
+            feedback_withheld = not grey_area_info["inGreyArea"]
+
+        if feedback_withheld:
+            promptUsed = f"Grey Area withheld ({grey_area_info['zone']})"
+            LLMResponse = (
+                BELOW_GREY_AREA_MESSAGE if grey_area_info['zone'] == 'below'
+                else ABOVE_GREY_AREA_MESSAGE
+            )
+        else:
+            promptUsed,LLMResponse=sendRequestToLLM(data)
+
         data['promptUsed']=promptUsed
-        response={'LLMResponse':LLMResponse}
+        response={
+            'LLMResponse': LLMResponse,
+            'feedbackWithheld': feedback_withheld,
+            'greyAreaZone': grey_area_info['zone'] if grey_area_info else None,
+        }
         sendTS=datetime.datetime.now().timestamp()
         data['user']=user['name']
         data['receptionTS']=receptionTS
         data['sendTS']=sendTS
         data['LLMResponse']=LLMResponse
-        db=get_db()
+        data['feedbackWithheld']=feedback_withheld
+        if grey_area_info:
+            data['predictedProbability']=grey_area_info['predictedProbability']
+            data['inGreyArea']=grey_area_info['inGreyArea']
+            data['greyAreaZone']=grey_area_info['zone']
         db.loggedData_data.insert_one(prepare_for_storage(data))
+
+        if grey_area_info:
+            afm.log_afm_attempt(
+                db, student=user['name'], kc=kc,
+                cell_identifier=data.get("cellIdentifier"),
+                opportunity_count=grey_area_info["opportunityCount"], outcome=0,
+                predicted_probability=grey_area_info["predictedProbability"],
+                in_grey_area=grey_area_info["inGreyArea"],
+                feedback_given=(not feedback_withheld), timestamp=receptionTS,
+            )
+            # Immediately nudge this student's/KC's live parameters -- next
+            # attempt's probability reflects this one right away, instead of
+            # waiting for fit_afm.py's next periodic refit.
+            afm.update_model_online(
+                db, user['name'], kc, grey_area_info["opportunityCount"], outcome=0
+            )
+
         return Response(
             json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'
         )

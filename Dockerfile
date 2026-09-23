@@ -11,10 +11,14 @@ RUN pip install --no-cache \
     werkzeug==3.1.6 \
     gunicorn==25.1.0 \
     flask-limiter==4.1.1 \
-    jupyterhub-idle-culler==1.4.0
+    jupyterhub-idle-culler==1.4.0 \
+    numpy==2.2.6 \
+    scikit-learn==1.7.2
 
 
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
 COPY logService.py /srv/jupyterhub/logService.py
+COPY afm.py /srv/jupyterhub/afm.py
+COPY fit_afm.py /srv/jupyterhub/fit_afm.py
 COPY solutions.py /srv/jupyterhub/solutions.py
 COPY prompts /srv/jupyterhub/prompts

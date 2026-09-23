@@ -60,4 +60,17 @@ c.JupyterHub.services = [
         'command': ['python3', '-m', 'jupyterhub_idle_culler', '--timeout=3600'],
         'admin': True,
     },
+    {
+        # Periodically refits the AFM student model from logged attempts,
+        # so Grey Area probabilities update automatically as students work
+        # -- no manual `fit_afm.py` invocation needed. See fit_afm.py for
+        # details; tune cadence via AFM_REFIT_INTERVAL_SECONDS below.
+        'name': 'afm-refit',
+        'command': ['python3', '/srv/jupyterhub/fit_afm.py'],
+        'environment': {
+            'MONGO_INITDB_ROOT_USERNAME': os.environ.get('MONGO_INITDB_ROOT_USERNAME', ''),
+            'MONGO_INITDB_ROOT_PASSWORD': os.environ.get('MONGO_INITDB_ROOT_PASSWORD', ''),
+            'AFM_REFIT_INTERVAL_SECONDS': os.environ.get('AFM_REFIT_INTERVAL_SECONDS', '120'),
+        },
+    },
 ]
