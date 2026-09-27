@@ -236,19 +236,18 @@ def evaluate_grey_area(db, student, kc):
         opportunityCount, predictedProbability, greyAreaLower,
         greyAreaUpper, inGreyArea, zone
 
-    zone is one of "below", "in", "above" -- being outside the Grey Area
-    means two very different things depending on which side you're on, and
-    callers (the extension's UI) need to tell them apart:
+    zone is one of "below", "in", "above" -- each means a different kind of
+    feedback for an "adaptiveSupport" cell (see logService.py's askLLM):
       - "above": predicted_p > upper bound. The student is doing well
-        enough on this KC that this hint mechanism isn't needed -- an
-        "you've got this, keep going" message is appropriate.
-      - "below": predicted_p < lower bound. The student is far enough
-        below the target zone that this specific hint mechanism is judged
-        unlikely to help -- telling them "you've got this" here would be
-        actively wrong. The appropriate response is pointing them back to
-        foundational material (lecture slides/tutorial) rather than
-        encouraging them to keep attempting the same exercise unaided.
-      - "in": inside the band -- normal hint/example generation proceeds.
+        enough on this KC that no hint is given at all -- just a plain
+        "you don't need a hint" text message, not counted against either
+        hint cap.
+      - "in": inside the band -- the student receives instructional-text-
+        style hints (up to 3 per cell).
+      - "below": predicted_p < lower bound. The student receives
+        worked-example-style hints instead (up to 3 per cell) -- a fuller
+        worked-through example, since the gap suggests they need more
+        scaffolding than an explanation alone.
     """
     opportunity_count = get_opportunity_count(db, student, kc)
     predicted_p = predict_success_probability(db, student, kc, opportunity_count)
@@ -295,7 +294,13 @@ def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
 # supportTypes that the Grey Area gate applies to. Other support types
 # (genericSupport, personalizedSupport, customPrompt, noSupport) keep
 # their existing always-on / always-off behavior untouched.
-GREY_AREA_SUPPORT_TYPES = {"workedExample", "instructionalText"}
+#
+# "adaptiveSupport" is the single cell-metadata value course authors use
+# for Grey-Area-driven cells: which of workedExample/instructionalText a
+# given attempt actually gets (or neither) is decided per-attempt in
+# logService.py's askLLM route, based on this student's live zone -- it is
+# no longer a fixed, per-cell choice.
+GREY_AREA_SUPPORT_TYPES = {"adaptiveSupport"}
 
 
 def grey_area_applies(support_type, kc):

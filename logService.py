@@ -108,6 +108,13 @@ user_limiter = Limiter(
 ALLOWED_SUPPORT_TYPES = {
     "noSupport", "genericSupport", "personalizedSupport",
     "customPrompt", "instructionalText", "workedExample",
+    # Grey-Area-driven cells: which of workedExample/instructionalText an
+    # attempt actually gets (or neither) is decided per-attempt based on
+    # the student's live zone -- see askLLM(). "instructionalText" and
+    # "workedExample" are kept above only as internal prompt-style names
+    # (and a harmless fallback for any not-yet-retagged cell); course
+    # authors should tag new/updated cells "adaptiveSupport" instead.
+    "adaptiveSupport",
 }
 
 MAX_FIELD_LENGTHS = {
@@ -145,16 +152,19 @@ def validate_error_data(data):
         if not isinstance(kc, str) or not KC_PATTERN.match(kc):
             return None, "KC must be alphanumeric/underscores only"
 
-    # hintCounter type safety
-    hint_counter = data.get("hintCounter")
-    if hint_counter is not None:
-        try:
-            hint_counter = int(hint_counter)
-        except (TypeError, ValueError):
-            return None, "hintCounter must be an integer"
-        if not (0 <= hint_counter <= 10):
-            return None, "hintCounter must be between 0 and 10"
-        data["hintCounter"] = hint_counter
+    # hintCounter type safety -- legacy single counter (still used by the
+    # non-adaptive instructionalText/workedExample prompt handlers), plus
+    # the two independent per-type counters "adaptiveSupport" cells send.
+    for counter_field in ("hintCounter", "hintCounterWorkedExample", "hintCounterInstructional"):
+        counter_value = data.get(counter_field)
+        if counter_value is not None:
+            try:
+                counter_value = int(counter_value)
+            except (TypeError, ValueError):
+                return None, f"{counter_field} must be an integer"
+            if not (0 <= counter_value <= 10):
+                return None, f"{counter_field} must be between 0 and 10"
+            data[counter_field] = counter_value
 
     # Enforce max lengths on string fields
     for field, max_len in MAX_FIELD_LENGTHS.items():
@@ -197,7 +207,8 @@ ALLOWED_STORAGE_FIELDS = {
     "sourceCode", "taskDescription", "hintCounter", "customPrompt", "user",
     "receptionTS", "sendTS", "promptUsed", "LLMResponse", "eventType",
     "success", "KC", "feedbackWithheld", "predictedProbability", "inGreyArea",
-    "greyAreaZone",
+    "greyAreaZone", "hintCounterWorkedExample", "hintCounterInstructional",
+    "hintTypeUsed", "hintNumber",
 }
 
 
@@ -206,25 +217,22 @@ def prepare_for_storage(data):
     return {k: v for k, v in data.items() if k in ALLOWED_STORAGE_FIELDS}
 
 
-# ── Grey Area withheld messages ─────────────────────────────────────────
-# These used to live only in the frontend (index.ts), which meant the exact
-# text shown to a student was never sent back to the server and never
-# ended up in loggedData_data -- only the feedbackWithheld flag was. Now
-# the backend is the single source of truth: askLLM() below puts one of
-# these into LLMResponse whenever feedback is withheld, so every attempt's
-# log record shows exactly what the student actually saw, same as when a
-# real LLM response is given.
+# ── Grey Area messages / text ────────────────────────────────────────────
+# Lives on the backend (not the frontend) so the exact text a student sees
+# always ends up in loggedData_data via LLMResponse, same as a real hint.
+#
+# Only the "above" zone gets a fixed message now -- "below" used to show a
+# canned "go review the basics" message instead of a hint, but per the new
+# adaptiveSupport design, "below" now means "give an instructional-text
+# hint" (see askLLM), not "withhold and show this text". There's no
+# canned message left for a capped-but-same-zone attempt (worked-example
+# or instructional hints exhausted for this cell while the student is
+# still in that zone) -- that case shows nothing at all, same as the
+# pre-existing "hintCounter >= maxHints" silent behavior.
 ABOVE_GREY_AREA_MESSAGE = (
     "#### No hint needed right now\n"
     "Based on how you've been doing, you're likely able to work through "
     "this one on your own. Keep trying!"
-)
-BELOW_GREY_AREA_MESSAGE = (
-    "#### Let's take a step back\n"
-    "This specific hint isn't likely to help right now -- it looks like "
-    "this topic needs a bit more foundational review first. Take another "
-    "look at the lecture slides/tutorial for this topic, then come back "
-    "and try again."
 )
 
 
@@ -295,12 +303,20 @@ promptHandlers = {
 
 
 
-def sendRequestToLLM(data):
-    supportType=data.get("supportType")
+def sendRequestToLLM(data, override_support_type=None, override_hint_counter=None):
+    # override_support_type / override_hint_counter let a caller generate a
+    # hint of a SPECIFIC type (e.g. 'workedExample') using a SPECIFIC per-type
+    # counter, independent of whatever data['supportType']/data['hintCounter']
+    # happen to hold. This is what adaptiveSupport uses: the top-level
+    # supportType stays 'adaptiveSupport' for logging/AFM purposes, but the
+    # actual hint generated underneath is workedExample- or
+    # instructionalText-style, keyed by its own counter. Every pre-existing
+    # caller omits both, so behavior for them is unchanged.
+    supportType = override_support_type if override_support_type is not None else data.get("supportType")
     if supportType=='noSupport':
         return None,None
 
-    hintCounter=data.get('hintCounter')
+    hintCounter = override_hint_counter if override_hint_counter is not None else data.get('hintCounter')
     if not isinstance(hintCounter, int) or hintCounter >= maxHints:
         solution = SOLUTIONS.get(data.get("cellIdentifier"), "No solution available for this exercise.")
         return 'Solution by teacher', solution
@@ -308,7 +324,11 @@ def sendRequestToLLM(data):
     handler = promptHandlers.get(supportType)
     if not handler:
         raise ValueError(f"Unknown supportType {supportType}")
-    prompt=handler(data)
+    # instructionalTextPrompt/workedExamplePrompt read data['hintCounter']
+    # directly, so when an override counter is in play, hand the handler a
+    # shallow copy with that counter substituted in rather than the caller's.
+    handler_data = data if override_hint_counter is None else {**data, 'hintCounter': hintCounter}
+    prompt=handler(handler_data)
     if prompt is None:
         solution = SOLUTIONS.get(data.get("cellIdentifier"), "No solution available for this exercise.")
         return 'Solution by teacher', solution
@@ -526,35 +546,79 @@ def askLLM(user):
         db=get_db()
 
         # ── Grey Area gate ──────────────────────────────────────────────
-        # Only applies to workedExample/instructionalText cells that carry
-        # a KC tag; every other supportType keeps its previous, ungated
-        # behavior. Outside the Grey Area means: skip the LLM call
-        # entirely (no hint, and no teacher-solution reveal either) --
-        # the student is assumed to either already have this KC, or be
-        # far enough from it that this specific hint mechanism isn't the
-        # right intervention.
+        # Only "adaptiveSupport" cells (carrying a KC tag) go through the
+        # Grey Area at all; every other supportType keeps its previous,
+        # ungated behavior (straight to sendRequestToLLM with whatever
+        # supportType/hintCounter it sent).
+        #
+        # For adaptiveSupport, the zone decides not just whether a hint is
+        # given but WHICH kind:
+        #   - "above": no hint, not counted against either cap -- just a
+        #     plain "you don't need a hint" message.
+        #   - "in": an instructionalText-style hint, capped at 3 uses.
+        #   - "below": a workedExample-style hint, capped at 3 uses.
+        # A student can cross zones across attempts on the same cell, so
+        # the two per-type counters (hintCounterWorkedExample,
+        # hintCounterInstructional) are tracked independently client-side
+        # and both sent with every attempt; hintNumber below is their sum
+        # + 1, i.e. a single cumulative 1-6 count across both types for
+        # display purposes. Capped-but-still-in-that-zone shows nothing at
+        # all (no hint, no teacher solution) -- the student needs to either
+        # keep practicing until the zone changes, or the teacher solution
+        # path (hintCounter-based, on non-adaptive cells) doesn't apply
+        # here by design.
         support_type = data.get("supportType")
         kc = data.get("KC")
         feedback_withheld = False
         grey_area_info = None
-        if afm.grey_area_applies(support_type, kc):
-            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
-            feedback_withheld = not grey_area_info["inGreyArea"]
+        hint_type_used = None
+        hint_number = None
 
-        if feedback_withheld:
-            promptUsed = f"Grey Area withheld ({grey_area_info['zone']})"
-            LLMResponse = (
-                BELOW_GREY_AREA_MESSAGE if grey_area_info['zone'] == 'below'
-                else ABOVE_GREY_AREA_MESSAGE
-            )
+        if support_type == "adaptiveSupport":
+            if not kc:
+                return jsonify({'success': False, 'message': 'KC is required for adaptiveSupport cells'}), 400
+
+            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
+            zone = grey_area_info['zone']
+            wc = data.get('hintCounterWorkedExample') or 0
+            ic = data.get('hintCounterInstructional') or 0
+
+            if zone == 'above':
+                feedback_withheld = True
+                promptUsed = "Grey Area: above (no hint needed)"
+                LLMResponse = ABOVE_GREY_AREA_MESSAGE
+            elif zone == 'in':
+                if ic < maxHints:
+                    hint_type_used = 'instructionalText'
+                    hint_number = wc + ic + 1
+                    promptUsed, LLMResponse = sendRequestToLLM(
+                        data, override_support_type='instructionalText', override_hint_counter=ic
+                    )
+                else:
+                    feedback_withheld = True
+                    promptUsed = "Grey Area: in (instructionalText cap reached)"
+                    LLMResponse = None
+            else:  # 'below'
+                if wc < maxHints:
+                    hint_type_used = 'workedExample'
+                    hint_number = wc + ic + 1
+                    promptUsed, LLMResponse = sendRequestToLLM(
+                        data, override_support_type='workedExample', override_hint_counter=wc
+                    )
+                else:
+                    feedback_withheld = True
+                    promptUsed = "Grey Area: below (workedExample cap reached)"
+                    LLMResponse = None
         else:
-            promptUsed,LLMResponse=sendRequestToLLM(data)
+            promptUsed, LLMResponse = sendRequestToLLM(data)
 
         data['promptUsed']=promptUsed
         response={
             'LLMResponse': LLMResponse,
             'feedbackWithheld': feedback_withheld,
             'greyAreaZone': grey_area_info['zone'] if grey_area_info else None,
+            'hintTypeUsed': hint_type_used,
+            'hintNumber': hint_number,
         }
         sendTS=datetime.datetime.now().timestamp()
         data['user']=user['name']
@@ -562,6 +626,8 @@ def askLLM(user):
         data['sendTS']=sendTS
         data['LLMResponse']=LLMResponse
         data['feedbackWithheld']=feedback_withheld
+        data['hintTypeUsed']=hint_type_used
+        data['hintNumber']=hint_number
         if grey_area_info:
             data['predictedProbability']=grey_area_info['predictedProbability']
             data['inGreyArea']=grey_area_info['inGreyArea']
@@ -569,6 +635,10 @@ def askLLM(user):
         db.loggedData_data.insert_one(prepare_for_storage(data))
 
         if grey_area_info:
+            # Every adaptiveSupport attempt is logged and fed into AFM
+            # regardless of which branch above fired -- above/capped
+            # attempts still tell us something about the student's real
+            # ability on this KC.
             afm.log_afm_attempt(
                 db, student=user['name'], kc=kc,
                 cell_identifier=data.get("cellIdentifier"),
