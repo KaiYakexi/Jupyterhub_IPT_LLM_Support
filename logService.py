@@ -497,17 +497,27 @@ def successLog(user):
         kc = data.get("KC")
         cell_id = data.get("cellIdentifier")
         grey_area_info = None
+        counts_as_opportunity = False
         if afm.grey_area_applies(support_type, kc):
-            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
+            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc, cell_id)
             data['predictedProbability'] = grey_area_info['predictedProbability']
             data['inGreyArea'] = grey_area_info['inGreyArea']
             data['greyAreaZone'] = grey_area_info['zone']
+            # Classic AFM/DataShop convention: one opportunity per CELL,
+            # scored on the FIRST attempt at it ("Correct First Attempt"),
+            # no matter how many retries happen afterward. Checked BEFORE
+            # this attempt is logged below, so it isn't counted against
+            # itself.
+            counts_as_opportunity = afm.is_new_opportunity(db, user['name'], kc, cell_id)
 
         db.loggedData_data.insert_one(prepare_for_storage(data))
 
         # Feed this attempt into the AFM training set too. Kept separate
         # from loggedData_data since it's a different shape (one row per
-        # attempt, used only for model fitting).
+        # attempt, used only for model fitting). EVERY attempt gets a row
+        # here -- including a retry on a cell that already has an
+        # opportunity on record -- so nothing a student did is lost, but
+        # only the opportunity-defining row feeds the model itself.
         if grey_area_info:
             afm.log_afm_attempt(
                 db, student=user['name'], kc=kc,
@@ -516,12 +526,17 @@ def successLog(user):
                 predicted_probability=grey_area_info['predictedProbability'],
                 in_grey_area=grey_area_info['inGreyArea'],
                 feedback_given=False, timestamp=receptionTS,
+                counts_as_opportunity=counts_as_opportunity,
             )
-            # Immediately nudge this student's/KC's live parameters -- next
-            # attempt's probability reflects this one right away.
-            afm.update_model_online(
-                db, user['name'], kc, grey_area_info['opportunityCount'], outcome=1
-            )
+            if counts_as_opportunity:
+                # Immediately nudge this student's/KC's live parameters --
+                # next attempt's probability reflects this one right away.
+                # Only fires once per opportunity: a retry on the same
+                # cell after this doesn't nudge the model again, since the
+                # opportunity's outcome is already fixed.
+                afm.update_model_online(
+                    db, user['name'], kc, grey_area_info['opportunityCount'], outcome=1
+                )
 
         return jsonify({'success': True, 'message': 'Data uploaded successfully'})
     except Exception as e:
@@ -573,12 +588,21 @@ def askLLM(user):
         grey_area_info = None
         hint_type_used = None
         hint_number = None
+        counts_as_opportunity = False
 
         if support_type == "adaptiveSupport":
             if not kc:
                 return jsonify({'success': False, 'message': 'KC is required for adaptiveSupport cells'}), 400
 
-            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc)
+            grey_area_info = afm.evaluate_grey_area(db, user['name'], kc, data.get("cellIdentifier"))
+            # Classic AFM/DataShop convention: one opportunity per CELL,
+            # scored on the FIRST attempt at it ("Correct First Attempt"),
+            # no matter how many retries follow. Checked BEFORE this
+            # attempt gets logged further down, so it isn't counted
+            # against itself.
+            counts_as_opportunity = afm.is_new_opportunity(
+                db, user['name'], kc, data.get("cellIdentifier")
+            )
             zone = grey_area_info['zone']
             wc = data.get('hintCounterWorkedExample') or 0
             ic = data.get('hintCounterInstructional') or 0
@@ -635,10 +659,12 @@ def askLLM(user):
         db.loggedData_data.insert_one(prepare_for_storage(data))
 
         if grey_area_info:
-            # Every adaptiveSupport attempt is logged and fed into AFM
-            # regardless of which branch above fired -- above/capped
-            # attempts still tell us something about the student's real
-            # ability on this KC.
+            # Every adaptiveSupport attempt is logged, regardless of which
+            # branch above fired -- above/capped attempts still tell us
+            # something about the student's real ability on this KC. But
+            # only the opportunity-defining attempt (the first one on this
+            # cell) feeds the model itself; retries on the same cell are
+            # still recorded here for visibility, just not double-counted.
             afm.log_afm_attempt(
                 db, student=user['name'], kc=kc,
                 cell_identifier=data.get("cellIdentifier"),
@@ -646,13 +672,16 @@ def askLLM(user):
                 predicted_probability=grey_area_info["predictedProbability"],
                 in_grey_area=grey_area_info["inGreyArea"],
                 feedback_given=(not feedback_withheld), timestamp=receptionTS,
+                counts_as_opportunity=counts_as_opportunity,
             )
-            # Immediately nudge this student's/KC's live parameters -- next
-            # attempt's probability reflects this one right away, instead of
-            # waiting for fit_afm.py's next periodic refit.
-            afm.update_model_online(
-                db, user['name'], kc, grey_area_info["opportunityCount"], outcome=0
-            )
+            if counts_as_opportunity:
+                # Immediately nudge this student's/KC's live parameters --
+                # next attempt's probability reflects this one right away,
+                # instead of waiting for fit_afm.py's next periodic refit.
+                # Only fires once per opportunity.
+                afm.update_model_online(
+                    db, user['name'], kc, grey_area_info["opportunityCount"], outcome=0
+                )
 
         return Response(
             json.dumps(response, indent=1, sort_keys=True), mimetype='application/json'

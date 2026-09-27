@@ -30,9 +30,13 @@ You can still run it once by hand for debugging:
 
 What it does (each cycle)
 --------------------------
-1. Reads every attempt logged so far from `afmAttempts` (written by
-   logService.py on every workedExample/instructionalText error or
-   success event).
+1. Reads every OPPORTUNITY-DEFINING attempt logged so far from
+   `afmAttempts` (written by logService.py on every adaptiveSupport error
+   or success event). Classic AFM counts one opportunity per cell, scored
+   on the first attempt at it -- a student's later retries on that same
+   cell are still logged as their own rows (for visibility/audit) but are
+   excluded here, same as they're excluded from the live online update in
+   afm.py, so they don't get double-counted in the fit.
 2. Fits AFM as a logistic regression using the classic dummy-coded
    parameterization (Cen, Koedinger & Junker, 2006):
        one indicator column per student  -> theta_i
@@ -97,8 +101,18 @@ def get_db():
 
 
 def fit_afm(db):
+    # Only opportunity-defining rows (countsAsOpportunity=True, or the
+    # field is absent entirely on rows logged before this distinction
+    # existed -- kept in for backward compatibility with data already in
+    # the collection) go into the fit. Retries on an already-scored cell
+    # (countsAsOpportunity=False) are excluded here, same as they're
+    # excluded from get_opportunity_count/update_model_online in afm.py --
+    # this keeps the batch refit consistent with the classic AFM
+    # one-row-per-opportunity design instead of over-weighting KCs/cells a
+    # student happened to retry a lot.
     attempts = list(db.afmAttempts.find(
-        {}, {"user": 1, "KC": 1, "opportunityCount": 1, "outcome": 1}
+        {"countsAsOpportunity": {"$ne": False}},
+        {"user": 1, "KC": 1, "opportunityCount": 1, "outcome": 1},
     ))
 
     if len(attempts) < MIN_ATTEMPTS_TO_FIT:

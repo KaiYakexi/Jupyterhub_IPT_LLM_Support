@@ -7,6 +7,28 @@ c.JupyterHub.authenticator_class = 'native'
 c.JupyterHub.template_paths = [f"{os.path.dirname(nativeauthenticator.__file__)}/templates/"]
 c.JupyterHub.log_level = os.environ.get('JUPYTERHUB_LOG_LEVEL', 'INFO')
 c.JupyterHub.hub_ip = '0.0.0.0'
+# hub_ip above is only the BIND address (what the Hub listens on inside its
+# own container) -- it says nothing about what address spawned student
+# containers should use to call BACK to the Hub. Without hub_connect_ip set
+# explicitly, JupyterHub falls back to auto-detecting its own hostname,
+# which inside a container defaults to that container's own ID (e.g.
+# "4e2f59fd7829") -- fine until the hub container is ever rebuilt/recreated
+# (a new image, `docker compose up --build`, a Kubernetes pod reschedule,
+# etc.), at which point it gets a NEW id, and every student container that
+# was already running still has the OLD id baked into its environment from
+# when it was spawned. Their notebook then can't reach the Hub at all
+# ("Failed to connect to Hub API at 'http://<old-id>:8081/...'") until that
+# student's server is fully stopped and re-spawned.
+#
+# 'jupyterhub-container' is this service's container_name in BOTH
+# docker-compose.yml and docker-compose.prod.yml, and Docker Compose
+# registers container_name as a resolvable DNS alias on every network that
+# container is attached to -- including 'students', the same network every
+# DockerSpawner-managed student container joins (see network_name below).
+# Pinning hub_connect_ip to that stable name means student containers
+# always reach the Hub at the same address, no matter how many times the
+# Hub container itself gets rebuilt/recreated behind it.
+c.JupyterHub.hub_connect_ip = 'jupyterhub-container'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 c.JupyterHub.base_url="/jupyterhub"
 

@@ -103,9 +103,56 @@ def get_grey_area_bounds(db, student, kc):
     return DEFAULT_GREY_AREA
 
 
-def get_opportunity_count(db, student, kc):
-    """How many times `student` has already attempted `kc`, before now."""
-    return db.afmAttempts.count_documents({"user": student, "KC": kc})
+def get_opportunity_count(db, student, kc, cell_identifier):
+    """How many opportunities `student` has already had at `kc`, before now
+    -- NOT counting `cell_identifier` itself, regardless of whether it has
+    already been attempted.
+
+    Classic AFM (Cen, Koedinger & Junker, 2006) defines one opportunity per
+    PROBLEM/STEP a KC appears in, not per raw attempt at that problem --
+    retrying the same cell five times before succeeding is still ONE
+    opportunity, not five (this matches the standard "Correct First
+    Attempt" convention from the PSLC DataShop tooling AFM was originally
+    fit against). Every individual attempt is still logged as its own row
+    in afmAttempts (see log_afm_attempt/is_new_opportunity below), but
+    retries on an already-seen cellIdentifier share it with the attempt
+    that first created the opportunity, so counting DISTINCT
+    cellIdentifiers -- rather than raw afmAttempts rows -- gives the
+    correct opportunity count.
+
+    The cell_identifier exclusion matters for that same reason: the very
+    FIRST attempt at a cell correctly doesn't count itself (it isn't in
+    afmAttempts yet), but without excluding it explicitly, any RETRY on
+    that same cell would see a count one higher than the first attempt
+    did -- simply because, by then, that first attempt has already been
+    logged and its cellIdentifier now shows up in the distinct count. That
+    off-by-one isn't real progress on the student's part, but it still
+    shifts predict_success_probability's N_ik term, which could silently
+    move a retry into a different predicted probability -- and even a
+    different Grey Area zone -- than the attempt that originally defined
+    this opportunity. Excluding cell_identifier keeps every attempt within
+    one opportunity (the first one, and every retry after it) looking at
+    the exact same N_ik.
+    """
+    return len(db.afmAttempts.distinct(
+        "cellIdentifier",
+        {"user": student, "KC": kc, "cellIdentifier": {"$ne": cell_identifier}},
+    ))
+
+
+def is_new_opportunity(db, student, kc, cell_identifier):
+    """True the first time `student` attempts `cell_identifier` for `kc` --
+    i.e. this is the attempt that DEFINES this opportunity's outcome
+    (Correct First Attempt). False for any later retry on the same cell:
+    those still get logged as their own row (see log_afm_attempt), but
+    they don't create a new opportunity and shouldn't feed
+    update_model_online again -- the opportunity's outcome was already
+    fixed by the first attempt, exactly as fit_afm.py's batch refit
+    should also only train on opportunity-defining rows.
+    """
+    return db.afmAttempts.count_documents(
+        {"user": student, "KC": kc, "cellIdentifier": cell_identifier}
+    ) == 0
 
 
 ONLINE_LEARNING_RATE = 0.15
@@ -228,8 +275,16 @@ def predict_success_probability(db, student, kc, opportunity_count):
     return sigmoid(z)
 
 
-def evaluate_grey_area(db, student, kc):
+def evaluate_grey_area(db, student, kc, cell_identifier):
     """Runs the full real-time decision for one attempt.
+
+    cell_identifier is needed so get_opportunity_count can exclude the
+    current cell from its distinct count -- see that function's docstring
+    for why, but in short: it's what keeps every attempt WITHIN one
+    opportunity (the first attempt on a cell, and any retries after it)
+    looking at the same N_ik and therefore getting the same predicted
+    probability and Grey Area zone, instead of retries silently drifting
+    to a different zone than the attempt that defined the opportunity.
 
     Returns a dict with everything needed both to decide whether to call
     the LLM and to log the attempt for later fitting:
@@ -249,7 +304,7 @@ def evaluate_grey_area(db, student, kc):
         worked-through example, since the gap suggests they need more
         scaffolding than an explanation alone.
     """
-    opportunity_count = get_opportunity_count(db, student, kc)
+    opportunity_count = get_opportunity_count(db, student, kc, cell_identifier)
     predicted_p = predict_success_probability(db, student, kc, opportunity_count)
     lower, upper = get_grey_area_bounds(db, student, kc)
     in_grey_area = lower <= predicted_p <= upper
@@ -271,10 +326,20 @@ def evaluate_grey_area(db, student, kc):
 
 def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
                      outcome, predicted_probability=None, in_grey_area=None,
-                     feedback_given=False, timestamp=None):
-    """Logs one attempt to the training set used by fit_afm.py's periodic
-    full refit (kept for stability/audit -- see update_model_online for
-    the immediate, per-attempt live update).
+                     feedback_given=False, timestamp=None,
+                     counts_as_opportunity=True):
+    """Logs one attempt -- EVERY attempt, including retries on a cell
+    that's already had its opportunity scored -- to afmAttempts, so
+    nothing about what a student actually did is lost.
+
+    Only rows with counts_as_opportunity=True are opportunity-defining
+    (the first attempt on this cellIdentifier for this KC): those are
+    what fit_afm.py's batch refit trains on, and what get_opportunity_count
+    counts. Retries (counts_as_opportunity=False, see is_new_opportunity)
+    are kept in this same collection purely for visibility into everything
+    a student tried within one opportunity -- they're never double-counted
+    by the model, since caller logService.py only calls
+    update_model_online for opportunity-defining rows.
 
     outcome: 1 for a successful run, 0 for a failed/erroring run.
     """
@@ -288,6 +353,7 @@ def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
         "inGreyArea": in_grey_area,
         "feedbackGiven": feedback_given,
         "timestamp": timestamp,
+        "countsAsOpportunity": counts_as_opportunity,
     })
 
 
