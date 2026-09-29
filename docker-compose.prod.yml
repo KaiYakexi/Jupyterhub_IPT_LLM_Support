@@ -17,8 +17,8 @@ services:
 
   jupyterhub:
     build: .
-    image: jupyterhub-custom
-    container_name: jupyterhub-container
+    image: jupyterhub-ipt-custom
+    container_name: jupyterhub-ipt-container
     depends_on:
       - db
       - docker-socket-proxy
@@ -61,9 +61,9 @@ networks:
   nginx-proxy:
     external: true
   backend:
-    name: backend
+    name: ipt-backend
     internal: true
   students:
-    name: students
+    name: ipt-students
     driver: bridge
     internal: true

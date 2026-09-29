@@ -20,15 +20,22 @@ c.JupyterHub.hub_ip = '0.0.0.0'
 # ("Failed to connect to Hub API at 'http://<old-id>:8081/...'") until that
 # student's server is fully stopped and re-spawned.
 #
-# 'jupyterhub-container' is this service's container_name in BOTH
+# 'jupyterhub-ipt-container' is this service's container_name in BOTH
 # docker-compose.yml and docker-compose.prod.yml, and Docker Compose
 # registers container_name as a resolvable DNS alias on every network that
-# container is attached to -- including 'students', the same network every
-# DockerSpawner-managed student container joins (see network_name below).
-# Pinning hub_connect_ip to that stable name means student containers
-# always reach the Hub at the same address, no matter how many times the
-# Hub container itself gets rebuilt/recreated behind it.
-c.JupyterHub.hub_connect_ip = 'jupyterhub-container'
+# container is attached to -- including 'ipt-students', the same network
+# every DockerSpawner-managed student container joins (see network_name
+# below). Pinning hub_connect_ip to that stable name means student
+# containers always reach the Hub at the same address, no matter how many
+# times the Hub container itself gets rebuilt/recreated behind it.
+#
+# NOTE (2026-09-29): renamed from the bare 'jupyterhub-container'/'students'
+# used earlier this project -- this server already has an older, unrelated
+# deployment (a previous pilot, 8-11 months old) running containers/networks
+# under those exact names. Renaming ours to the 'ipt-' prefix avoids any
+# container-name collision or accidental network-sharing with that old
+# stack, without needing to touch or stop it.
+c.JupyterHub.hub_connect_ip = 'jupyterhub-ipt-container'
 c.JupyterHub.db_url = "sqlite:///data/jupyterhub.sqlite"
 c.JupyterHub.base_url="/jupyterhub"
 
@@ -41,7 +48,7 @@ c.NativeAuthenticator.open_signup = True
 # Spawner
 c.Spawner.http_timeout = 300
 c.DockerSpawner.mem_limit = '4G'
-c.DockerSpawner.network_name = 'students'
+c.DockerSpawner.network_name = 'ipt-students'
 c.DockerSpawner.remove = True
 c.JupyterHub.spawner_class = DockerSpawner
 

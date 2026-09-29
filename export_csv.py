@@ -20,7 +20,7 @@ jupyterhub_data volume). Pull them onto your machine with:
     docker compose cp jupyterhub:/srv/jupyterhub/data/afmAttempts_export.csv ./afmAttempts_export.csv
 
 (docker compose cp needs a fairly recent Compose version; if it's not
-available, `docker cp jupyterhub-container:/srv/jupyterhub/data/<file> .`
+available, `docker cp jupyterhub-ipt-container:/srv/jupyterhub/data/<file> .`
 does the same thing using the container name directly.)
 """
 
