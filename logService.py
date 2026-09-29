@@ -503,6 +503,8 @@ def successLog(user):
             data['predictedProbability'] = grey_area_info['predictedProbability']
             data['inGreyArea'] = grey_area_info['inGreyArea']
             data['greyAreaZone'] = grey_area_info['zone']
+            data['greyAreaLower'] = grey_area_info['greyAreaLower']
+            data['greyAreaUpper'] = grey_area_info['greyAreaUpper']
             # Classic AFM/DataShop convention: one opportunity per CELL,
             # scored on the FIRST attempt at it ("Correct First Attempt"),
             # no matter how many retries happen afterward. Checked BEFORE
@@ -527,6 +529,8 @@ def successLog(user):
                 in_grey_area=grey_area_info['inGreyArea'],
                 feedback_given=False, timestamp=receptionTS,
                 counts_as_opportunity=counts_as_opportunity,
+                grey_area_lower=grey_area_info['greyAreaLower'],
+                grey_area_upper=grey_area_info['greyAreaUpper'],
             )
             if counts_as_opportunity:
                 # Immediately nudge this student's/KC's live parameters --
@@ -656,6 +660,8 @@ def askLLM(user):
             data['predictedProbability']=grey_area_info['predictedProbability']
             data['inGreyArea']=grey_area_info['inGreyArea']
             data['greyAreaZone']=grey_area_info['zone']
+            data['greyAreaLower']=grey_area_info['greyAreaLower']
+            data['greyAreaUpper']=grey_area_info['greyAreaUpper']
         db.loggedData_data.insert_one(prepare_for_storage(data))
 
         if grey_area_info:
@@ -673,6 +679,8 @@ def askLLM(user):
                 in_grey_area=grey_area_info["inGreyArea"],
                 feedback_given=(not feedback_withheld), timestamp=receptionTS,
                 counts_as_opportunity=counts_as_opportunity,
+                grey_area_lower=grey_area_info["greyAreaLower"],
+                grey_area_upper=grey_area_info["greyAreaUpper"],
             )
             if counts_as_opportunity:
                 # Immediately nudge this student's/KC's live parameters --

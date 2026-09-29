@@ -79,11 +79,84 @@ PARAM_CLIP = 6.0
 def clip_param(value):
     return max(-PARAM_CLIP, min(PARAM_CLIP, value))
 
-# Default Grey Area band, centered on p=0.5, following "Area 4" from the
-# Chounta et al. paper. Kept as a function (not a constant) so a future
-# per-student/per-KC personalized band size can replace this without
-# touching any call site.
-DEFAULT_GREY_AREA = (0.3, 0.7)
+# ── Personalized Grey Area (P-GA) ────────────────────────────────────────
+# Sheng & Chounta, "Beyond One-Size-Fits-All: Personalizing Computational
+# Proxies of the Zone of Proximal Development Through Help-Seeking
+# Behaviors" -- replaces the original fixed (0.3, 0.7) band (which was
+# centered on p=0.5, following "Area 4" of Chounta et al., ECTEL 2017)
+# with a center and width that both adapt per student+KC. See
+# get_grey_area_bounds for how the pieces below combine.
+#
+# NOTE on the constants: the paper's full text sits behind a paywall we
+# don't have access to, so PGA_ALPHA/PGA_BASE_HALF_WIDTH/PGA_GROWTH_RATE/
+# PGA_MAX_HINTS/PGA_MAX_SHIFT below were carried over from an earlier,
+# UNVERIFIED reading of it -- they should not be cited as "the paper's
+# values" until someone checks them against the actual equations.
+#
+# Two real bugs have been found and fixed in how the width was built, both
+# from logged data, both in the same underlying spot (how delta_upper/
+# delta_lower combined with the base half-width):
+#
+# 1. (2026-09-29, first pass) The original delta_upper/delta_lower were
+#    h_k/(PGA_MAX_HINTS+1) and (PGA_MAX_HINTS-h_k)/(PGA_MAX_HINTS+1) --
+#    these summed to a CONSTANT (PGA_MAX_HINTS/(PGA_MAX_HINTS+1) =~ 0.83)
+#    regardless of h_k, added on top of 2*PGA_BASE_HALF_WIDTH=0.4, for a
+#    pre-clamp w_upper+w_lower of 1.233 -- strictly more than the [0,1]
+#    budget available around ANY center. That guaranteed at least one
+#    bound clamped to 0/1 on literally every attempt (confirmed: 138/138
+#    real logged attempts did).
+# 2. (2026-09-29, second pass) Scaling that same additive delta down
+#    (PGA_DELTA_SCALE) stopped the guaranteed-saturation problem, but the
+#    deeper issue was structural, not just a matter of size: delta_upper
+#    and delta_lower were two INDEPENDENTLY-ADDED terms rather than a
+#    proper skew, so their (scaled) sum was still a nonzero constant added
+#    on top of the base every time -- the band was ALWAYS wider than
+#    2*PGA_BASE_HALF_WIDTH, never just reallocated between the two sides.
+#    Deployed and tested (2026-09-29, 37 fresh attempts): average width
+#    0.565 (vs. the intended 0.4, i.e. the original non-personalized
+#    band's width) and 37/37 attempts landed "in" the zone -- confirming
+#    this as the reason feedback was skewing almost entirely to
+#    instructional-text hints instead of a real below/in/above split.
+#
+# The fix: hint_skew below is a proper zero-sum trade-off between the two
+# sides (added to upper, subtracted from lower -- the same pattern
+# _signed_shift already used correctly), bounded by PGA_HINT_SKEW_FRACTION
+# * PGA_BASE_HALF_WIDTH, so absent any incorrect-streak shift,
+# w_upper + w_lower == 2*PGA_BASE_HALF_WIDTH exactly, no matter what h_k
+# is -- h_k only decides how that fixed budget splits between the two
+# sides, never how much total budget there is. Simulated against 523 real
+# logged attempts (combining both exports so far): at the unchanged
+# PGA_BASE_HALF_WIDTH=0.20, this alone drops "in zone" from the observed
+# 100% to roughly 56%, with ~20% below and ~24% above -- see chat for the
+# full table across narrower PGA_BASE_HALF_WIDTH candidates if 56% "in"
+# still feels too high once more real data comes in.
+PGA_ALPHA = 0.4
+# weight on the GLOBAL threshold in the center blend (Eq. 1) -- 0.4
+# global / 0.6 local, giving individual performance history the larger
+# say in a student's own personalized center.
+PGA_BASE_HALF_WIDTH = 0.20
+# w0: base half-width on each side of the center, before any adjustment
+# -- same magnitude as the original fixed band's +/-0.2 around 0.5. This
+# is now genuinely the TOTAL typical width budget (2*w0), not just a
+# floor that hint_skew/shift get added on top of -- see the note above.
+PGA_GROWTH_RATE = 0.20
+# r: how fast the incorrect-streak shift f(L) grows per consecutive
+# wrong-first-attempt opportunity.
+PGA_MAX_HINTS = 5
+# n: hint count cap per opportunity (Rachatasumrit & Koedinger, 2021's
+# assistance-score convention, adopted by the P-GA paper).
+PGA_MAX_SHIFT = 0.5 * (1 - PGA_BASE_HALF_WIDTH)
+# w_max: cap on f(L) itself, preventing a long struggle streak from
+# expanding/contracting a boundary without bound.
+PGA_HINT_SKEW_FRACTION = 0.75
+# Our own addition (not from the paper): how much of PGA_BASE_HALF_WIDTH
+# hint usage on the current cell can shift from one side to the other.
+# At h_k=0 (no hints yet), the lower side shrinks to (1-0.75)=25% of
+# PGA_BASE_HALF_WIDTH while the upper side grows to 175% of it, and it's
+# exactly mirrored at h_k=PGA_MAX_HINTS -- always trading between the two
+# sides, never adding to their sum. 0.75 leaves a floor (a side never
+# fully collapses to 0 from hint_skew alone) while still letting hint
+# count meaningfully swing which side of center is more permissive.
 
 
 def sigmoid(x):
@@ -93,14 +166,158 @@ def sigmoid(x):
         return 0.0 if x < 0 else 1.0
 
 
-def get_grey_area_bounds(db, student, kc):
-    """Returns (lower, upper) probability bounds for the Grey Area.
-
-    Currently a fixed band for everyone. Replace this function's body to
-    plug in a personalized band size later -- every caller in this module
-    goes through here, so nothing else needs to change.
+def _get_global_threshold(db):
+    """Population-wide classification threshold (t_global in the P-GA
+    paper) -- the ROC-optimal cutoff for predicting outcome from
+    predictedProbability, fit periodically across ALL students'
+    opportunity-defining attempts by fit_afm.py (Youden's J: tpr - fpr,
+    maximized). Falls back to 0.5 (i.e. "no information yet, split the
+    difference") before the first successful fit -- which also matches
+    the original fixed band's center, so cold start behaves the same as
+    before this change.
     """
-    return DEFAULT_GREY_AREA
+    doc = db.afmModel.find_one({"type": "population"}) or {}
+    return doc.get("tGlobal", 0.5)
+
+
+def _get_local_threshold(db, student, kc):
+    """This student's own average predicted-correctness on this KC so far
+    (t_i,j^local in the P-GA paper) -- the mean predictedProbability
+    across their own opportunity-defining attempts on this KC. Falls back
+    to the global threshold when they have no opportunities on this KC
+    yet, so a brand-new KC for them doesn't pull their personalized
+    center toward an arbitrary default.
+    """
+    pipeline = [
+        {"$match": {"user": student, "KC": kc, "countsAsOpportunity": True}},
+        {"$group": {"_id": None, "avg": {"$avg": "$predictedProbability"}}},
+    ]
+    result = list(db.afmAttempts.aggregate(pipeline))
+    if not result or result[0].get("avg") is None:
+        return _get_global_threshold(db)
+    return result[0]["avg"]
+
+
+def get_personalized_center(db, student, kc):
+    """P-GA center (Eq. 1): a weighted blend of the population-wide
+    ROC-optimal threshold and this student's own average performance on
+    this KC -- the personalized classification threshold that separates
+    "predicted correct" from "predicted incorrect" for this student+KC.
+    """
+    t_global = _get_global_threshold(db)
+    t_local = _get_local_threshold(db, student, kc)
+    return PGA_ALPHA * t_global + (1 - PGA_ALPHA) * t_local
+
+
+def _get_hint_count_this_opportunity(db, student, kc, cell_identifier):
+    """h_k in the P-GA paper: how many of this student's attempts SO FAR
+    on this specific cell (i.e. within the CURRENT opportunity, across
+    any retries already made on it) actually produced a hint -- capped at
+    PGA_MAX_HINTS, using hint count alone rather than hint-plus-incorrect
+    (Rachatasumrit & Koedinger, 2021's convention, adopted by the P-GA
+    paper). "Produced a hint" means afmAttempts.feedbackGiven=True, which
+    logService.py only sets when a real hint (workedExample or
+    instructionalText content) was actually shown -- not for a plain
+    success, the "above zone" no-hint-needed message, or a capped-silent
+    attempt.
+
+    In this system students don't explicitly REQUEST hints -- they get
+    one automatically right after an error, whenever the zone calls for
+    it (per your mapping: no feedback = correct or "above" = doing well
+    enough; a hint given = the below/in-zone response to an error). h_k
+    here is simply how many of those automatic hints have already landed
+    on THIS attempt at THIS cell, since that's the direct analogue of
+    "how many times has this student already asked for help on this
+    problem" in the paper's own hint-seeking framing.
+    """
+    count = db.afmAttempts.count_documents({
+        "user": student, "KC": kc, "cellIdentifier": cell_identifier,
+        "feedbackGiven": True,
+    })
+    return min(count, PGA_MAX_HINTS)
+
+
+def _get_consecutive_incorrect_streak(db, student, kc):
+    """L in the P-GA paper: how many opportunities IN A ROW this
+    student's FIRST attempt has been incorrect on this KC, walking
+    backwards from the most recent opportunity and stopping at the last
+    correct first attempt (or the start of their history on this KC).
+    Only opportunity-defining rows are considered, since only those carry
+    a "first attempt" outcome at all -- retries within an opportunity
+    don't extend or break this streak.
+    """
+    rows = db.afmAttempts.find(
+        {"user": student, "KC": kc, "countsAsOpportunity": True},
+        {"outcome": 1, "_id": 0},
+    ).sort("timestamp", -1)
+    streak = 0
+    for row in rows:
+        if row.get("outcome") == 0:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _signed_shift(streak_length):
+    """f(L) in the P-GA paper: grows linearly with the incorrect-streak
+    length at PGA_GROWTH_RATE, capped at PGA_MAX_SHIFT. Always added to
+    the upper width and subtracted from the lower width (Eq. 2) -- a
+    sustained streak of wrong first attempts makes the band skew more
+    permissive above center (easier to be seen as needing a hint rather
+    than "independent") and stricter below center (easier to be
+    classified fully "below" -- genuinely beyond this hint mechanism --
+    rather than lingering in the hint-eligible band indefinitely).
+    """
+    return min(PGA_GROWTH_RATE * streak_length, PGA_MAX_SHIFT)
+
+
+def get_grey_area_bounds(db, student, kc, cell_identifier):
+    """Returns (lower, upper) probability bounds for the Personalized
+    Grey Area (P-GA), per Sheng & Chounta, "Beyond One-Size-Fits-All:
+    Personalizing Computational Proxies of the Zone of Proximal
+    Development Through Help-Seeking Behaviors" (Eq. 1-2).
+
+    Unlike the original fixed (0.3, 0.7) band, both the CENTER and the
+    WIDTH are personalized:
+      - center blends a population-wide ROC-optimal threshold with this
+        student's own average performance on this KC
+        (get_personalized_center).
+      - width is asymmetric and reacts to two behavioral signals: hint
+        usage on the CURRENT cell (more hints so far this opportunity =>
+        more benefit of the doubt above center, less below), and a run of
+        consecutive wrong first attempts on this KC (the longer the
+        streak, the more the same asymmetric skew is reinforced). Both
+        signals SKEW the band (trade width from one side to the other);
+        neither one inflates its total size -- see the PGA_HINT_SKEW_
+        FRACTION comment above for why that distinction matters.
+    """
+    center = get_personalized_center(db, student, kc)
+
+    h_k = _get_hint_count_this_opportunity(db, student, kc, cell_identifier)
+    # hint_skew ranges from -PGA_HINT_SKEW_FRACTION*PGA_BASE_HALF_WIDTH (at
+    # h_k=0) to +that same amount (at h_k=PGA_MAX_HINTS), and is added to
+    # the upper width / subtracted from the lower width below -- the same
+    # zero-sum pattern _signed_shift already uses, so more hints so far
+    # this opportunity move width FROM the lower side TO the upper side
+    # (more benefit of the doubt above center) rather than adding width
+    # to both.
+    hint_skew_max = PGA_HINT_SKEW_FRACTION * PGA_BASE_HALF_WIDTH
+    hint_skew = hint_skew_max * (2 * h_k / PGA_MAX_HINTS - 1)
+
+    streak = _get_consecutive_incorrect_streak(db, student, kc)
+    shift = _signed_shift(streak)
+
+    w_upper = min(PGA_BASE_HALF_WIDTH + hint_skew + shift, 1.0)
+    w_lower = max(PGA_BASE_HALF_WIDTH - hint_skew - shift, 0.0)
+
+    upper = min(center + w_upper, 1.0)
+    lower = max(center - w_lower, 0.0)
+    # Degenerate-edge safety net: extreme personalization inputs
+    # shouldn't ever be able to invert the band.
+    if lower > upper:
+        lower, upper = upper, lower
+    return lower, upper
 
 
 def get_opportunity_count(db, student, kc, cell_identifier):
@@ -276,15 +493,22 @@ def predict_success_probability(db, student, kc, opportunity_count):
 
 
 def evaluate_grey_area(db, student, kc, cell_identifier):
-    """Runs the full real-time decision for one attempt.
+    """Runs the full real-time decision for one attempt: is THIS student,
+    right now, above/in/below their own Personalized Grey Area for this
+    KC (get_grey_area_bounds) -- computed fresh per student+KC+cell every
+    time this is called, never cached, so it always reflects whatever the
+    model and this student's own recent history currently say.
 
-    cell_identifier is needed so get_opportunity_count can exclude the
-    current cell from its distinct count -- see that function's docstring
-    for why, but in short: it's what keeps every attempt WITHIN one
-    opportunity (the first attempt on a cell, and any retries after it)
-    looking at the same N_ik and therefore getting the same predicted
-    probability and Grey Area zone, instead of retries silently drifting
-    to a different zone than the attempt that defined the opportunity.
+    cell_identifier is used twice here, for two different reasons:
+      - get_opportunity_count excludes the current cell from its distinct
+        count, so every attempt WITHIN one opportunity (the first attempt
+        on a cell, and any retries after it) looks at the same N_ik
+        instead of a retry silently drifting to a different N_ik (and
+        potentially a different zone) than the attempt that defined the
+        opportunity.
+      - get_grey_area_bounds needs it too, since the P-GA band's WIDTH
+        reacts to hint usage on the specific cell currently being
+        attempted (_get_hint_count_this_opportunity).
 
     Returns a dict with everything needed both to decide whether to call
     the LLM and to log the attempt for later fitting:
@@ -306,7 +530,7 @@ def evaluate_grey_area(db, student, kc, cell_identifier):
     """
     opportunity_count = get_opportunity_count(db, student, kc, cell_identifier)
     predicted_p = predict_success_probability(db, student, kc, opportunity_count)
-    lower, upper = get_grey_area_bounds(db, student, kc)
+    lower, upper = get_grey_area_bounds(db, student, kc, cell_identifier)
     in_grey_area = lower <= predicted_p <= upper
     if predicted_p > upper:
         zone = "above"
@@ -327,7 +551,8 @@ def evaluate_grey_area(db, student, kc, cell_identifier):
 def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
                      outcome, predicted_probability=None, in_grey_area=None,
                      feedback_given=False, timestamp=None,
-                     counts_as_opportunity=True):
+                     counts_as_opportunity=True,
+                     grey_area_lower=None, grey_area_upper=None):
     """Logs one attempt -- EVERY attempt, including retries on a cell
     that's already had its opportunity scored -- to afmAttempts, so
     nothing about what a student actually did is lost.
@@ -341,6 +566,14 @@ def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
     by the model, since caller logService.py only calls
     update_model_online for opportunity-defining rows.
 
+    grey_area_lower/grey_area_upper: the actual Personalized Grey Area
+    bounds this attempt was judged against (evaluate_grey_area's
+    greyAreaLower/greyAreaUpper). Unlike the old fixed (0.3, 0.7) band,
+    these move per student+KC+cell, so without logging them here there's
+    no way to later tell WHAT band a given predictedProbability/zone was
+    actually compared against -- only inGreyArea (in-or-not) survived
+    before this. None for any row logged before this field existed.
+
     outcome: 1 for a successful run, 0 for a failed/erroring run.
     """
     db.afmAttempts.insert_one({
@@ -351,6 +584,8 @@ def log_afm_attempt(db, student, kc, cell_identifier, opportunity_count,
         "outcome": outcome,
         "predictedProbability": predicted_probability,
         "inGreyArea": in_grey_area,
+        "greyAreaLower": grey_area_lower,
+        "greyAreaUpper": grey_area_upper,
         "feedbackGiven": feedback_given,
         "timestamp": timestamp,
         "countsAsOpportunity": counts_as_opportunity,

@@ -44,10 +44,15 @@ What it does (each cycle)
        one (KC indicator * opportunity count) column per KC -> gamma_k
    with NO separate intercept term -- the student columns collectively
    serve as per-student intercepts, which is the standard AFM setup.
-3. Writes the fitted theta_i / beta_k / gamma_k, plus how many attempts
-   each was fit from (needed for the shrinkage estimate in afm.py), and
-   the population-average theta/beta/gamma, into the `afmModel`
-   collection.
+3. Computes t_global -- the population-wide ROC-optimal classification
+   threshold (Youden's J) on predictedProbability vs. actual outcome --
+   for the Personalized Grey Area (Sheng & Chounta): the global half of
+   each student's personalized center (see afm.py's
+   get_personalized_center).
+4. Writes the fitted theta_i / beta_k / gamma_k, t_global, plus how many
+   attempts each was fit from (needed for the shrinkage estimate in
+   afm.py), and the population-average theta/beta/gamma, into the
+   `afmModel` collection.
 
 Requires numpy + scikit-learn (added to the Dockerfile).
 """
@@ -60,6 +65,7 @@ import logging
 import numpy as np
 from pymongo import MongoClient
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_curve
 
 import afm
 
@@ -112,7 +118,7 @@ def fit_afm(db):
     # student happened to retry a lot.
     attempts = list(db.afmAttempts.find(
         {"countsAsOpportunity": {"$ne": False}},
-        {"user": 1, "KC": 1, "opportunityCount": 1, "outcome": 1},
+        {"user": 1, "KC": 1, "opportunityCount": 1, "outcome": 1, "predictedProbability": 1},
     ))
 
     if len(attempts) < MIN_ATTEMPTS_TO_FIT:
@@ -195,6 +201,32 @@ def fit_afm(db):
     beta_avg = float(np.mean(list(beta.values())))
     gamma_avg = float(np.mean(list(gamma.values())))
 
+    # t_global for the Personalized Grey Area (Sheng & Chounta): the
+    # population-wide ROC-optimal threshold on predictedProbability for
+    # classifying outcome, found via Youden's J (tpr - fpr, maximized) --
+    # the same "derive from the AFM model's ROC curve" approach the paper
+    # describes. Uses whatever predictedProbability each attempt was
+    # logged with (the model's belief AT THE TIME, before that attempt's
+    # own outcome was known), which is exactly what a threshold search
+    # needs to be evaluated against actual outcomes properly.
+    t_global = 0.5
+    scored = [
+        (a["predictedProbability"], a.get("outcome"))
+        for a in attempts if a.get("predictedProbability") is not None
+    ]
+    if len(scored) >= 2:
+        scores = np.array([s for s, _ in scored])
+        outcomes = np.array([1.0 if o == 1 else 0.0 for _, o in scored])
+        if len(set(outcomes.tolist())) >= 2:
+            fpr, tpr, thresholds = roc_curve(outcomes, scores)
+            best_idx = int(np.argmax(tpr - fpr))
+            candidate = float(thresholds[best_idx])
+            # roc_curve's first threshold is conventionally max(score)+1
+            # (guaranteed to classify everything negative) -- not a real
+            # probability, so guard against it leaking through.
+            if np.isfinite(candidate) and 0.0 <= candidate <= 1.0:
+                t_global = candidate
+
     now = __import__("datetime").datetime.now().timestamp()
 
     db.afmModel.update_one(
@@ -204,6 +236,7 @@ def fit_afm(db):
             "thetaAvg": theta_avg,
             "betaAvg": beta_avg,
             "gammaAvg": gamma_avg,
+            "tGlobal": t_global,
             "nAttemptsUsed": len(attempts),
             "nStudents": n_students,
             "nKCs": n_kcs,
